@@ -1,0 +1,9 @@
+{
+  "name": "flowdrop",
+  "private": true,
+  "version": "1.4.0",
+  "description": "FlowDrop · 星语心流 —— 单文件治愈系专注应用",
+  "scripts": {
+    "dev": "node dev-server.js"
+  }
+}
