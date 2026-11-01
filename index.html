@@ -1,1 +1,2235 @@
-PLACEHOLDER
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>FlowDrop · 星语心流</title>
+<style>
+/* ============================================================
+ * FlowDrop · 星语心流 —— 样式层
+ * 原则：治愈系紫蓝夜空 + 全面毛玻璃 UI，无任何高饱和警告色
+ * ============================================================ */
+
+/* ---------- 0. 基础复位 ---------- */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 100%; height: 100%;
+  height: 100dvh;                            /* 移动端动态视口高度，防地址栏挤压变形 */
+  overflow: hidden;
+  background: #0f172a;                     /* 与夜空渐变顶部同色，防止白闪 */
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+               system-ui, -apple-system, sans-serif;
+  color: #e6e9f5;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;                       /* 画布上拖动鼠标时不选中文字 */
+}
+
+/* ---------- 1. 全屏画布 ---------- */
+#sky {
+  position: fixed; inset: 0;
+  width: 100vw; height: 100vh;
+  height: 100dvh;                          /* 移动端动态视口高度 */
+  display: block;
+  touch-action: none;                      /* 移动端触摸不触发页面滚动 */
+}
+
+/* ---------- 2. 毛玻璃通用质感 ---------- */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 20px;
+  box-shadow: 0 8px 40px rgba(2, 6, 23, 0.45),
+              inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: opacity 0.45s ease;
+}
+
+/* 隐藏只改透明度，不动 transform，避免破坏各面板的居中定位 */
+.hidden { opacity: 0 !important; pointer-events: none !important; }
+
+/* ---------- 3. IDLE 输入面板 ---------- */
+#idlePanel {
+  position: fixed; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(420px, calc(100vw - 48px));
+  padding: 38px 36px 30px;
+  display: flex; flex-direction: column; gap: 18px;
+  text-align: center;
+}
+#idlePanel h1 {
+  font-size: 30px; font-weight: 700; letter-spacing: 3px;
+  background: linear-gradient(120deg, #c7d2fe, #f0abfc 60%, #fde68a);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+#idlePanel h1 span { font-size: 18px; letter-spacing: 6px; }
+#idlePanel .sub { font-size: 13px; color: rgba(214, 222, 255, 0.65); letter-spacing: 1px; }
+#idlePanel .row {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  color: rgba(214, 222, 255, 0.75); font-size: 14px;
+}
+#idlePanel .row input { width: 96px; text-align: center; }
+#idlePanel .tip { font-size: 11px; color: rgba(214, 222, 255, 0.30); letter-spacing: 1px; }
+
+/* 个性化画像行（选填）：三个毛玻璃下拉框并排，不强制选择 */
+#idlePanel .profileRow { display: flex; gap: 8px; }
+#idlePanel select {
+  font: inherit; color: #eef1ff; outline: none; cursor: pointer;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  padding: 10px 6px; font-size: 12px; letter-spacing: 0.5px;
+  flex: 1; min-width: 0;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+#idlePanel select:focus {
+  border-color: rgba(165, 180, 252, 0.55);
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.25);
+}
+/* 下拉选项在 Windows 原生弹出层里要用深色底，否则白底白字看不清 */
+#idlePanel select option { background: #1e1b4b; color: #eef1ff; }
+
+/* ---------- 4. 输入框 / 按钮 ---------- */
+input {
+  font: inherit; color: #eef1ff; outline: none;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 13px 16px; font-size: 15px; width: 100%;
+  user-select: text;                       /* 输入框内允许选中 */
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+input::placeholder { color: rgba(220, 228, 255, 0.45); }
+input:focus {
+  border-color: rgba(167, 139, 250, 0.7);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+}
+/* 去掉 number 输入框的上下小箭头，保持极简 */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+button {
+  font: inherit; color: #fff; cursor: pointer; border: none;
+  border-radius: 999px; padding: 13px 34px;
+  font-size: 16px; letter-spacing: 2px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6 55%, #a78bfa);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.45);
+  transition: transform 0.25s, box-shadow 0.25s, filter 0.25s;
+}
+button:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 10px 30px rgba(139, 92, 246, 0.6); }
+button:active { transform: translateY(0); }
+
+/* ---------- 5. 左上角倒计时 HUD ---------- */
+#hud {
+  position: fixed; left: 18px; top: 18px;
+  flex-shrink: 0;                          /* 任何布局下都不许压扁倒计时 */
+  padding: 10px 20px 12px;
+  display: flex; flex-direction: column; gap: 2px;
+  border-radius: 16px;
+}
+#hudTime {
+  font-size: 24px; font-weight: 600; letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;      /* 数字等宽，跳动不抖 */
+  color: #eef1ff;
+}
+#hudTime::before { content: "✦ "; color: #a5b4fc; font-size: 16px; }
+#hudGoal { font-size: 12px; color: rgba(214, 222, 255, 0.6); letter-spacing: 1px; }
+
+/* 【冲刺模式】剩余 ≤60 秒：倒计时与星标转暖橙色，温柔地紧张起来 */
+#hud.sprint #hudTime { color: #ffb066; text-shadow: 0 0 14px rgba(255, 150, 60, 0.55); }
+#hud.sprint #hudTime::before { color: #ffb066; }
+
+/* ---------- 6. 停滞警告（暖橙，绝不刺眼） ---------- */
+#warn {
+  position: fixed; left: 50%; bottom: 108px;
+  transform: translateX(-50%);
+  padding: 12px 26px; border-radius: 999px;
+  font-size: 14px; letter-spacing: 1px; white-space: nowrap;
+  color: #ffdcb8;
+  background: rgba(255, 176, 102, 0.10);
+  border: 1px solid rgba(255, 176, 102, 0.32);
+  box-shadow: 0 6px 28px rgba(255, 150, 60, 0.18);
+  animation: breathe 2.4s ease-in-out infinite;   /* 呼吸浮动，温柔提醒 */
+}
+@keyframes breathe {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50%      { transform: translateX(-50%) translateY(-5px); }
+}
+
+/* ---------- 7. 轻提示 Toast ---------- */
+#toast {
+  position: fixed; left: 50%; bottom: 44px;
+  transform: translateX(-50%);
+  width: fit-content; max-width: 92vw; white-space: normal; text-align: center;
+  padding: 11px 24px; border-radius: 999px;
+  font-size: 13px; letter-spacing: 1px;
+  color: rgba(230, 233, 245, 0.9);
+}
+
+/* ---------- 8. FINISHED 结算卡片 ---------- */
+#report {
+  position: fixed; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(360px, calc(100vw - 48px));
+  padding: 36px 32px 30px;
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  text-align: center;
+}
+#report h2 { font-size: 22px; letter-spacing: 4px; color: #eef1ff; font-weight: 600; }
+#report .score { margin: 10px 0 4px; }
+#report .score span {
+  font-size: 58px; font-weight: 700;
+  background: linear-gradient(120deg, #fde68a, #f0abfc 60%, #a5b4fc);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+#report .score em { font-style: normal; font-size: 15px; color: rgba(214, 222, 255, 0.6); margin-left: 4px; }
+#report p { font-size: 13px; color: rgba(214, 222, 255, 0.7); letter-spacing: 1px; line-height: 1.9; }
+#report button { margin-top: 16px; font-size: 14px; padding: 11px 30px; }
+
+/* ---------- 9. 点击提示面板（屏幕最上方 · 小巧方形 · 淡蓝磨砂 · 呼吸缩放） ---------- */
+.cuepanel {
+  position: fixed; top: 24px; left: 50%;
+  transform: translateX(-50%);
+  padding: 16px 20px;
+  min-width: 168px;                          /* 小巧的正方形比例，类似高级 UI 提示框 */
+  border-radius: 14px;
+  background: rgba(147, 197, 253, 0.10);     /* 淡蓝磨砂底 */
+  border: 1px solid rgba(147, 197, 253, 0.30);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 28px rgba(96, 165, 250, 0.18),
+              inset 0 1px 0 rgba(255, 255, 255, 0.10);
+  pointer-events: none;                      /* 绝不拦截点击 */
+  z-index: 30;
+  text-align: center;
+  opacity: 0;
+  transition: opacity 0.45s ease;
+  animation: cueBreath 2.2s ease-in-out infinite;   /* 轻微呼吸缩放 */
+}
+.cuepanel.on { opacity: 1; }
+.cuepanel.bye { opacity: 0 !important; transition: opacity 0.9s ease; }  /* 2.5s 后平滑淡出 */
+/* 【排版铁律】所有中英双语提示一律「大英文在上 + 小中文在下」，
+ * 中文字号比英文小一号，显得更精致 */
+.cuepanel .en {
+  font-size: 13px; letter-spacing: 2px; color: #7db4ff;
+  text-shadow: 0 0 10px rgba(125, 180, 255, 0.5);   /* 蓝色科技感 */
+}
+.cuepanel .zh {
+  font-size: 10px; letter-spacing: 1px; margin-top: 3px;
+  color: rgba(125, 180, 255, 0.60);
+}
+.cuepanel .wrnEn {
+  font-size: 12px; letter-spacing: 2px; margin-top: 9px;
+  color: #f49ba8;                                    /* 低饱和玫瑰红：警示但不刺眼 */
+  text-shadow: 0 0 10px rgba(244, 155, 168, 0.4);
+}
+.cuepanel .wrnZh {
+  font-size: 9px; letter-spacing: 1px; margin-top: 3px;
+  color: rgba(244, 155, 168, 0.60);
+}
+@keyframes cueBreath {
+  0%, 100% { transform: translateX(-50%) scale(1); }
+  50%      { transform: translateX(-50%) scale(1.045); }
+}
+
+/* ---------- 9.5b 冻结提示（AI 陪跑展开时，画面定格 + 中央半透明小字） ---------- */
+#pausedTip {
+  position: fixed; left: 50%; top: 42%;
+  transform: translate(-50%, -50%);
+  padding: 18px 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  border-radius: 18px;
+  text-align: center;
+  z-index: 35;                                /* 在画布之上、聊天面板之下 */
+  animation: cueBreath2 2.6s ease-in-out infinite;   /* 轻柔呼吸，绝不刺眼 */
+}
+#pausedTip .en { font-size: 16px; letter-spacing: 3px; color: rgba(214, 222, 255, 0.85); }
+#pausedTip .zh { font-size: 11px; letter-spacing: 3px; color: rgba(214, 222, 255, 0.55); margin-top: 2px; }
+#pausedTip button { margin-top: 8px; font-size: 13px; padding: 9px 24px; }
+@keyframes cueBreath2 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.03); }
+}
+
+/* ---------- 9.6 AI 教练：LOADING 呼吸动画 与 SUGGEST 建议卡 ---------- */
+#loading {
+  position: fixed; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 30px 42px;
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  border-radius: 20px;
+}
+#loading .breathDot {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: radial-gradient(circle, #c7d2fe, #8b5cf6);
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.8);
+  animation: aiBreath 1.6s ease-in-out infinite;
+}
+#loading .breathTxt {
+  font-size: 14px; letter-spacing: 3px; color: rgba(214, 222, 255, 0.85);
+  animation: aiBreath 1.6s ease-in-out infinite;
+}
+@keyframes aiBreath {
+  0%, 100% { opacity: 0.45; transform: scale(0.92); }
+  50%      { opacity: 1;    transform: scale(1.08); }
+}
+#suggest {
+  position: fixed; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, calc(100vw - 48px));
+  padding: 32px 30px 26px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  text-align: center;
+}
+#suggest .tag {
+  color: #a5b4fc;
+  text-shadow: 0 0 10px rgba(165, 180, 252, 0.5);
+  text-align: center;
+}
+/* 【排版铁律】大英文标题在上；下方中文策略字号必须小一号 */
+#suggest .tag .en { display: block; font-size: 19px; font-weight: 600; letter-spacing: 3px; }
+#suggest .advice {
+  font-size: 14px; line-height: 1.9; letter-spacing: 1px;
+  color: #eef1ff;
+}
+#suggest button { margin-top: 8px; }
+
+/* ---------- 9.7 AI 学习陪跑对话框（右下角悬浮 · 可折叠 · 不遮中央漏斗） ---------- */
+/* 【3D 立体悬浮光球】多层 radial-gradient 叠出玻璃球体质感：
+ * ① 左上高光点 ② 中心发亮的蓝紫球体 ③ 边缘蓝/紫微光 + 内阴影；
+ * 上下浮动呼吸 + 外部光环心跳缩放渐隐 + 中央小星星缓慢旋转。 */
+#chatFab {
+  position: fixed; right: 22px; bottom: 22px; z-index: 40;
+  width: 56px; height: 56px; border-radius: 50%;
+  flex-shrink: 0;                          /* 防压扁：任何布局下保持正圆 */
+  aspect-ratio: 1 / 1;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; cursor: pointer; border: none;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.25) 18%, rgba(255,255,255,0) 40%),
+    radial-gradient(circle at 78% 82%, rgba(96,165,250,0.50) 0%, rgba(96,165,250,0) 46%),
+    radial-gradient(circle at 50% 55%, rgba(199,210,254,0.92) 0%, rgba(147,130,255,0.60) 42%, rgba(80,60,190,0.78) 78%, rgba(40,30,120,0.92) 100%);
+  box-shadow:
+    0 10px 32px rgba(139, 92, 246, 0.45),
+    0 2px 10px rgba(96, 165, 250, 0.35),
+    inset 0 -6px 14px rgba(30, 20, 90, 0.55),
+    inset 0 3px 8px rgba(255, 255, 255, 0.35);
+  animation: orbFloat 3.2s ease-in-out infinite;      /* 上下浮动呼吸 */
+  transition: filter 0.25s ease;
+}
+#chatFab:hover { filter: brightness(1.15); }
+/* 中央小星星：渐变着色 + 缓慢旋转 */
+#chatFab .star {
+  background: linear-gradient(135deg, #ffffff, #c7d2fe 55%, #93c5fd);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 12px rgba(199, 210, 254, 0.8);
+  animation: starSpin 9s linear infinite;
+}
+/* 外部光环：心跳般缓慢缩放渐隐 */
+#chatFab::after {
+  content: '';
+  position: absolute; inset: -10px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(167, 139, 250, 0.55);
+  box-shadow: 0 0 18px rgba(139, 92, 246, 0.35);
+  animation: haloBeat 2.6s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-5px); }
+}
+@keyframes starSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes haloBeat {
+  0%   { transform: scale(0.82); opacity: 0.9; }
+  70%  { transform: scale(1.28); opacity: 0; }
+  100% { transform: scale(1.28); opacity: 0; }
+}
+#chatPanel {
+  position: fixed; right: 22px; bottom: 88px; z-index: 40;
+  width: min(330px, calc(100vw - 40px));
+  height: 400px; max-height: 52vh;
+  display: flex; flex-direction: column;
+  border-radius: 18px; overflow: hidden;
+  transform-origin: bottom right;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+#chatPanel.hidden { opacity: 0 !important; pointer-events: none !important; transform: scale(0.85); }
+#chatPanel .chatHead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px;
+  font-size: 13px; letter-spacing: 2px; color: #a5b4fc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+#chatClose {
+  background: none; border: none; box-shadow: none;
+  padding: 0 6px; font-size: 18px; line-height: 1;
+  color: rgba(214, 222, 255, 0.6); border-radius: 8px;
+}
+#chatClose:hover { color: #eef1ff; transform: none; filter: none; box-shadow: none; }
+/* 【排版铁律】聊天面板标题：大英文在上，小中文在下 */
+#chatPanel .chatTitle { text-align: left; line-height: 1.3; }
+#chatPanel .chatTitle .en { display: block; font-size: 13px; letter-spacing: 2px; }
+#chatPanel .chatTitle .zh { display: block; font-size: 9px;  letter-spacing: 2px; opacity: 0.65; margin-top: 1px; }
+#chatMsgs {
+  flex: 1; overflow-y: auto; padding: 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  scrollbar-width: thin; scrollbar-color: rgba(167, 139, 250, 0.35) transparent;
+}
+.msg {
+  max-width: 84%; padding: 8px 12px; border-radius: 14px;
+  font-size: 13px; line-height: 1.7; letter-spacing: 0.3px;
+  white-space: pre-wrap; word-break: break-word;
+  animation: msgIn 0.3s ease;
+}
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.msg.user {
+  align-self: flex-end;
+  background: rgba(147, 197, 253, 0.16);
+  border: 1px solid rgba(147, 197, 253, 0.28);
+  color: #dceaff;
+}
+.msg.ai {
+  align-self: flex-start;
+  background: rgba(196, 181, 253, 0.12);
+  border: 1px solid rgba(196, 181, 253, 0.25);
+  color: #e9e4ff;
+}
+.msg.typing { display: flex; gap: 4px; }
+.msg.typing span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(233, 228, 255, 0.7);
+  animation: dotBlink 1.2s ease-in-out infinite;
+}
+.msg.typing span:nth-child(2) { animation-delay: 0.2s; }
+.msg.typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotBlink { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+#chatPanel .chatRow {
+  display: flex; gap: 8px; padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.10);
+}
+#chatInput { flex: 1; padding: 10px 12px; font-size: 13px; }
+#chatSend { padding: 10px 16px; font-size: 13px; letter-spacing: 1px; }
+
+/* ---------- 10. 小屏适配 ---------- */
+@media (max-width: 480px) {
+  #idlePanel { padding: 30px 24px 24px; }
+  #idlePanel h1 { font-size: 24px; }
+  #hudTime { font-size: 20px; }
+  #report .score span { font-size: 46px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 背景音乐：部署时请将 background.mp3 与本文件放在同一目录。
+     【铁律】只使用相对路径 ./background.mp3，禁止任何本地绝对路径 -->
+<audio id="bgm" src="./background.mp3" loop preload="auto"></audio>
+
+<!-- 全屏画布：夜空 / 星辰 / 粒子 / 倒置漏斗 / 沙丘 全部绘制在这里 -->
+<canvas id="sky"></canvas>
+
+<!-- ▶ 状态一：IDLE 输入面板 -->
+<div id="idlePanel" class="glass">
+  <h1>FlowDrop<span> · 星语心流</span></h1>
+  <p class="sub">把今晚的心愿写下来，让它化作缓缓沉降的星光</p>
+  <input id="goalInput" type="text" maxlength="200"
+         placeholder="你今晚想专注什么？" autocomplete="off" />
+  <div class="row">
+    <input id="minInput" type="number" min="1" max="180" value="25" />
+    <label for="minInput">分钟</label>
+  </div>
+  <!-- 选填个性化画像：三项都默认为空、不强制；
+       填写后 AI 教练会结合画像给出更贴切的核心节点与建议 -->
+  <div class="profileRow">
+    <select id="gradeSel">
+      <option value="" selected>年级 · 选填</option>
+      <option>初一</option><option>初二</option><option>初三</option>
+      <option>高一</option><option>高二</option><option>高三</option>
+    </select>
+    <select id="deptSel">
+      <option value="" selected>部别 · 选填</option>
+      <option>国内部</option><option>国际部</option>
+    </select>
+    <select id="trackSel">
+      <option value="" selected>走向 · 选填</option>
+      <option>走国内高考</option><option>走出国留学</option>
+    </select>
+  </div>
+  <button id="startBtn">✦ 唤醒星光</button>
+  <p class="tip">建议佩戴耳机 · 别让页面离开视线哦</p>
+</div>
+
+<!-- ▶ 状态二：FALLING 倒计时 HUD -->
+<div id="hud" class="glass hidden">
+  <div id="hudTime">25:00</div>
+  <div id="hudGoal"></div>
+</div>
+
+<!-- 停滞 6 秒的温柔提醒 -->
+<div id="warn" class="glass hidden">星光飘远了，轻轻动动鼠标唤回它</div>
+
+<!-- ▶ 冻结提示：AI 陪跑展开时画面原地定格，中央浮现半透明小字 + 继续专注按钮
+     排版铁律：大英文 Focus Paused 在上，小中文「专注已冻结」在下 -->
+<div id="pausedTip" class="glass hidden">
+  <div class="en">Focus Paused</div>
+  <div class="zh">专注已冻结</div>
+  <button id="resumeBtn">▶ 继续专注 Resume</button>
+</div>
+
+<!-- 通用轻提示 -->
+<div id="toast" class="glass hidden"></div>
+
+<!-- ▶ 状态一·五：LOADING —— AI 教练思考中的极简呼吸动画 -->
+<div id="loading" class="glass hidden">
+  <div class="breathDot"></div>
+  <div class="breathTxt">AI 教练正在思考…</div>
+</div>
+
+<!-- ▶ 状态一·六：SUGGEST —— AI 硬核策略卡片
+     排版铁律：大英文 Specific Strategy 在上，小中文（AI 返回的策略）在下 -->
+<div id="suggest" class="glass hidden">
+  <div class="tag">
+    <span class="en">Specific Strategy</span>
+  </div>
+  <div class="advice" id="adviceText"></div>
+  <button id="focusBtn">✦ 开始专注</button>
+</div>
+
+<!-- ▶ 状态三：FINISHED 结算卡片 -->
+<div id="report" class="glass hidden">
+  <h2>专注完成！</h2>
+  <div class="score"><span id="rScore">0</span><em>分</em></div>
+  <p id="rLine1"></p>
+  <p id="rLine2"></p>
+  <button id="againBtn">再次唤醒</button>
+</div>
+
+<!-- ▶ 右下角悬浮：AI 学习陪跑对话框（可折叠，绝不遮挡中央漏斗） -->
+<div id="chatPanel" class="glass hidden">
+  <div class="chatHead">
+    <span class="chatTitle">
+      <span class="en">✦ AI Companion</span>
+      <span class="zh">AI 学习陪跑</span>
+    </span>
+    <button id="chatClose" title="收起">×</button>
+  </div>
+  <div id="chatMsgs"></div>
+  <div class="chatRow">
+    <input id="chatInput" type="text" maxlength="200"
+           placeholder="问点什么，或发我你今天的计划…" autocomplete="off" />
+    <button id="chatSend">发送</button>
+  </div>
+</div>
+<button id="chatFab" title="AI 学习陪跑"><span class="star">✦</span></button>
+
+<script>
+'use strict';
+/* ============================================================
+ * FlowDrop · 星语心流 —— 逻辑层（v1.10.0：冲刺模式 + 移动端防变形）
+ * 模块：0 配置 → 1 DOM/画布 → 2 音频 → 3 精灵 → 4 星空 →
+ *       5 粒子池 → 6 文本采样 → 7 倒置漏斗 → 8 沙丘碰撞 →
+ *       9 状态机（含 LOADING/SUGGEST）→ 9.5 游荡弹幕 → 9.8 AI 教练 →
+ *       9.9 学习陪跑对话框 → 10 交互 → 11 主循环
+ * 铁律：动态采样率控制粒子总量保 60 帧、睡眠态零物理、
+ *       音频引用一律相对路径 ./background.mp3
+ * ============================================================ */
+
+/* ---------------- DeepSeek AI 教练配置 ----------------
+ * 【安全提醒】密钥写在前端等于公开：任何人查看网页源码都能拿走它。
+ * 仅适用于可接受该风险的个人小项目（可随时去 DeepSeek 控制台作废重置）。
+ * 防翻车三保险：3s AbortController 超时 + HTTP 非 200 视为失败 + 本地兜底建议。 */
+const DEEPSEEK_API_KEY = "sk-1092657dcbe4467bbf23b585fd87dcf1";
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/chat/completions';
+const AI_TIMEOUT_MS = 3000;                                  // 3 秒超时红线
+const AI_FALLBACK = '专注当下，开始你的任务。';               // 本地兜底策略文案
+
+/* ---------------- 0. 全局配置 ---------------- */
+const CFG = {
+  POOL_SIZE     : 2600,   // 对象池容量（保险丝，正常永远不会用满）
+  MAX_DYNAMIC   : 2400,   // 【动态性能保护】粒子总数软上限（超长文本自动降低采样率压到它以内）
+  SAMPLE_BASE   : 5,      // 像素采样基准步长（px），文字越长步长自动越大
+  SAMPLE_MAX    : 12,     // 采样步长上限（每隔最多 12px 取一点）
+  GRAVITY       : 26,     // 粒子下落加速度 px/s²
+  MOUSE_R       : 150,    // 鼠标引力场半径 px
+  MOUSE_F       : 115,    // 鼠标引力强度
+  CORE_FALL     : 7,      // 视觉核心整体下降速度 px/s
+  CORE_LOW_Y    : 0.24,   // 核心下降下限（占屏高比例，悬于漏斗宽口上方）
+  SWAY_AMP      : 46,     // 核心左右摇摆幅度 px
+  SWAY_FREQ     : 0.45,   // 摇摆角频率 rad/s
+  BREATH_AMP    : 0.06,   // 呼吸式缩放幅度（±6%）
+  BREATH_FREQ   : 0.9,    // 呼吸角频率 rad/s
+  IDLE_DIM      : 3,      // 停滞 3s：粒子变暗
+  IDLE_WARN     : 6,      // 停滞 6s：暖橙边缘光 + 文案提醒
+  IDLE_FAIL     : 10,     // 停滞 10s：化作流星，失败重置
+  FUNNEL_TOP    : 0.34,   // 倒置漏斗宽口高度（占屏高比例）
+  FUNNEL_NECK   : 0.62,   // 倒置漏斗漏孔高度（占屏高比例）
+  FUNNEL_HALF_W : 0.48,   // 漏斗宽口半宽（占屏宽比例，几乎贯穿全屏）
+  HOLE_HW       : 5,      // 漏孔半宽 px（极小）
+  DUNE_COL      : 8,      // 沙丘高度场列宽 px
+  DUNE_MAX      : 0.30,   // 沙丘最大高度（占屏高比例）
+  TUMBLE_MAX    : 1.4,    // 落地翻滚最长时长 s（超时强制入睡）
+  ORBIT_TIME    : 2.8,    // 点击磁场持续时间 s
+  DANMAKU_LIFE  : 15,     // 游荡弹幕存活时长 s（尾 2s 柔和淡出）
+  DANMAKU_MAX   : 6,      // 同屏弹幕上限（保持空灵，绝不吵闹）
+};
+
+/* 粒子配色：暖白 / 淡金 / 淡蓝（治愈系三原色） */
+const PALETTE = [
+  [255, 247, 230],   // 暖白
+  [255, 217, 138],   // 淡金
+  [168, 200, 255],   // 淡蓝
+];
+
+/* 应用状态机：LOADING = 等待 AI 建议；SUGGEST = 展示 AI 建议卡片 */
+const S = { IDLE: 0, FALLING: 1, FINISHED: 2, FAILING: 3, LOADING: 4, SUGGEST: 5 };
+/* 粒子状态机：云团 → 下落 →（漏斗内壁滑行）→ 穿透下落 → 翻滚碰撞 → 沙丘睡眠；
+ * 特殊：FADE 切屏淡出回收、METEOR 失败流星、ORBIT 点击磁场 */
+const PS = { CORE: 0, FALL: 1, SLEEP: 2, FADE: 3, METEOR: 4, PLATE: 5, ORBIT: 6, TUMBLE: 7 };
+
+/* ---------------- 1. DOM 与画布 ---------------- */
+const bgm      = document.getElementById('bgm');   // <audio> 元素（见 HTML 注释）
+const canvas   = document.getElementById('sky');
+const ctx      = canvas.getContext('2d');
+const idlePanel= document.getElementById('idlePanel');
+const goalInput= document.getElementById('goalInput');
+const minInput = document.getElementById('minInput');
+const startBtn = document.getElementById('startBtn');
+const hud      = document.getElementById('hud');
+const hudTime  = document.getElementById('hudTime');
+const hudGoal  = document.getElementById('hudGoal');
+const warnEl   = document.getElementById('warn');
+const pausedTip= document.getElementById('pausedTip');   // 冻结提示（Focus Paused）
+const resumeBtn= document.getElementById('resumeBtn');   // 继续专注按钮
+const toastEl  = document.getElementById('toast');
+const loadingEl= document.getElementById('loading');
+const suggestEl= document.getElementById('suggest');
+const adviceEl = document.getElementById('adviceText');
+const gradeSel = document.getElementById('gradeSel');    // 画像：年级（选填）
+const deptSel  = document.getElementById('deptSel');     // 画像：部别（选填）
+const trackSel = document.getElementById('trackSel');    // 画像：走向（选填）
+const focusBtn = document.getElementById('focusBtn');
+const chatFab  = document.getElementById('chatFab');
+const chatPanel= document.getElementById('chatPanel');
+const chatClose= document.getElementById('chatClose');
+const chatMsgs = document.getElementById('chatMsgs');
+const chatInput= document.getElementById('chatInput');
+const chatSend = document.getElementById('chatSend');
+const reportEl = document.getElementById('report');
+const rScore   = document.getElementById('rScore');
+const rLine1   = document.getElementById('rLine1');
+const rLine2   = document.getElementById('rLine2');
+const againBtn = document.getElementById('againBtn');
+
+let W = 0, H = 0, DPR = 1;      // 逻辑宽/高与设备像素比
+let skyGrad = null;             // 夜空渐变（resize 时重建）
+let warnGrad = null;            // 停滞暖橙边缘光（resize 时重建）
+let nowSec = 0;                 // 主循环时间戳（供事件回调读取）
+
+/* ---------------- 2. 音频：BGM 淡入淡出 + Web Audio 合成音效 ---------------- */
+bgm.volume = 0;                 // 音量由 bgmTarget 平滑驱动，从不硬切
+let bgmTarget = 0;
+
+let AC = null;                  // AudioContext 懒加载（需用户手势解锁）
+function ac() {
+  if (!AC) AC = new (window.AudioContext || window.webkitAudioContext)();
+  if (AC.state === 'suspended') AC.resume();
+  return AC;
+}
+
+/* 预生成 2 秒白噪声 Buffer，供"叹息声"复用 */
+let noiseBuf = null;
+function getNoise(ctxA) {
+  if (noiseBuf) return noiseBuf;
+  const len = ctxA.sampleRate * 2;
+  noiseBuf = ctxA.createBuffer(1, len, ctxA.sampleRate);
+  const d = noiseBuf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  return noiseBuf;
+}
+
+/* 叹息声：下扫正弦（像轻轻呼气）+ 低通白噪（气息感），增益极低，绝不刺耳 */
+function playSigh() {
+  const ctxA = ac(), t = ctxA.currentTime;
+  const out = ctxA.createGain(); out.gain.value = 0.9; out.connect(ctxA.destination);
+  // ① 下滑正弦
+  const o = ctxA.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(300, t);
+  o.frequency.exponentialRampToValueAtTime(130, t + 1.2);
+  const lp = ctxA.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700;
+  const og = ctxA.createGain();
+  og.gain.setValueAtTime(0.0001, t);
+  og.gain.exponentialRampToValueAtTime(0.10, t + 0.30);
+  og.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+  o.connect(lp); lp.connect(og); og.connect(out);
+  o.start(t); o.stop(t + 1.6);
+  // ② 低通白噪气息
+  const n = ctxA.createBufferSource(); n.buffer = getNoise(ctxA);
+  const nf = ctxA.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 420;
+  const ng = ctxA.createGain();
+  ng.gain.setValueAtTime(0.0001, t);
+  ng.gain.exponentialRampToValueAtTime(0.045, t + 0.4);
+  ng.gain.exponentialRampToValueAtTime(0.0001, t + 1.6);
+  n.connect(nf); nf.connect(ng); ng.connect(out);
+  n.start(t); n.stop(t + 1.7);
+}
+
+/* 完成风铃：四个高音正弦 + 二次泛音，指数衰减，整体过低通，治愈空灵感 */
+function playChime() {
+  const ctxA = ac(), t0 = ctxA.currentTime;
+  const master = ctxA.createGain(); master.gain.value = 0.5;
+  const lp = ctxA.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 5200;
+  master.connect(lp); lp.connect(ctxA.destination);
+  [880, 1108.73, 1318.51, 1760].forEach((f, i) => {   // A5 C#6 E6 A6
+    const t = t0 + i * 0.16;
+    const o = ctxA.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+    const g = ctxA.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.16, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 2.8);
+    o.connect(g); g.connect(master); o.start(t); o.stop(t + 3);
+    const o2 = ctxA.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 2;
+    const g2 = ctxA.createGain();
+    g2.gain.setValueAtTime(0.0001, t);
+    g2.gain.exponentialRampToValueAtTime(0.05, t + 0.02);
+    g2.gain.exponentialRampToValueAtTime(0.0001, t + 1.8);
+    o2.connect(g2); g2.connect(master); o2.start(t); o2.stop(t + 2);
+  });
+}
+
+/* ---------------- 3. 辉光精灵（性能关键） ----------------
+ * 不在每帧使用 shadowBlur（极慢），而是把"径向渐变光斑"
+ * 预渲染成小贴图，每帧 drawImage，GPU 友好，轻松 60 帧。 */
+function makeSprite(rgb) {
+  const s = 64, c = document.createElement('canvas');
+  c.width = c.height = s;
+  const g = c.getContext('2d'), r = s / 2;
+  const gr = g.createRadialGradient(r, r, 0, r, r, r);
+  gr.addColorStop(0,    'rgba(255,255,255,0.95)');
+  gr.addColorStop(0.25, `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.85)`);
+  gr.addColorStop(0.6,  `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0.22)`);
+  gr.addColorStop(1,    `rgba(${rgb[0]},${rgb[1]},${rgb[2]},0)`);
+  g.fillStyle = gr; g.fillRect(0, 0, s, s);
+  return c;
+}
+const SPR = PALETTE.map(makeSprite);
+/* 【冲刺模式炽热贴图】剩余 ≤60 秒时粒子切换为炽白 / 亮橙 / 橙红 */
+const SPR_HOT = [
+  [255, 255, 255],   // 炽白
+  [255, 190, 110],   // 亮橙
+  [255, 140, 60],    // 橙红
+].map(makeSprite);
+
+/* ---------------- 4. 星空背景与背景流星 ---------------- */
+let stars = [];
+function buildStars() {
+  const n = Math.max(60, Math.round(W * H / 12000));   // 按屏面积决定密度
+  stars = [];
+  for (let i = 0; i < n; i++) {
+    stars.push({
+      x: Math.random() * W,
+      y: Math.random() * H * 0.92,
+      r: Math.random() * 1.3 + 0.4,
+      p: Math.random() * Math.PI * 2,                  // 闪烁相位
+      s: 0.4 + Math.random() * 1.2,                    // 闪烁速度
+    });
+  }
+}
+
+let meteors = [], meteorTimer = 4;
+function spawnMeteor() {
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  meteors.push({
+    x: Math.random() * W,
+    y: Math.random() * H * 0.35,
+    vx: dir * (380 + Math.random() * 260),
+    vy: 180 + Math.random() * 160,
+    life: 1,
+  });
+}
+
+/* ---------------- 5. 粒子对象池 ----------------
+ * 一次性建好 POOL_SIZE 个对象，终生复用：
+ * alloc() 从空闲栈取，free() 归还，运行期零 GC 压力。
+ * 粒子总量由「动态采样率」软上限 MAX_DYNAMIC 控制（见第 6 节），
+ * 池容量仅作保险丝。睡眠（SLEEP）粒子跳过一切物理计算。 */
+const pool = [];
+const freeList = [];
+for (let i = 0; i < CFG.POOL_SIZE; i++) {
+  pool.push({
+    idx: i, used: false,
+    x: 0, y: 0, vx: 0, vy: 0,       // 位置 / 速度
+    ox: 0, oy: 0,                   // 在文本云中的相对偏移
+    size: 2, spr: 0,                // 尺寸 / 颜色精灵索引
+    alpha: 1, base: 1,              // 当前透明度 / 基准透明度
+    phase: 0,                       // 闪烁相位
+    state: PS.CORE,                 // 粒子状态机
+    life: 0,                        // 流星态剩余生命
+    plated: false,                  // 是否已穿过漏斗漏孔（防止二次捕获）
+    tumble: 0,                      // 翻滚态已持续时间
+    orbAng: 0, orbR: 0,             // 点击磁场：环绕角度 / 半径
+    orbSpeed: 0, orbUntil: 0,       // 点击磁场：角速度 / 结束时刻
+    fallBoost: 1,                   // 个体下落速度差异系数（× 全局时间速度联动系数）
+  });
+  freeList.push(i);
+}
+function alloc() {
+  if (!freeList.length) return null;         // 池满 → 拒绝（保险丝）
+  const p = pool[freeList.pop()];
+  p.used = true;
+  return p;
+}
+function free(p) {
+  p.used = false;
+  freeList.push(p.idx);
+}
+
+/* ================================================================
+ * 6. 文本 → 星云云团（动态采样率）
+ * ---------------------------------------------------------------
+ * 【取消固定硬上限】粒子数量随文字长度动态生成：
+ *   ① 用基准步长 SAMPLE_BASE(5px) 采样文字像素；
+ *   ② 若总量超过软上限 MAX_DYNAMIC(2400)，逐步加大步长
+ *      （每隔 5→12px 取一点）重新采样，直到落入性能安全区；
+ *   ③ 兜底再均匀抽稀一次。
+ * 因此文字越长粒子越多，但超长文本也绝不会卡崩帧率。
+ * 【文字同步削减】每个 CORE 粒子就是文字上的一个像素点 ——
+ *   粒子被"剥离"（CORE → FALL）的那一刻，它就离开云团，
+ *   顶部文字上对应的像素点同步消失，直到整个文字被吃空。
+ * ================================================================ */
+let coreCenter = { x: 0, y: 0 };    // 视觉核心当前中心
+let coreRadius = 200;               // 核心半径（用于背板辉光）
+let fitScale = 1;                   // 文字点阵适配屏幕的缩放
+let totalSpawned = 0;               // 本次唤醒生成的粒子总数
+let sampleStepUsed = CFG.SAMPLE_BASE;  // 本次实际使用的采样步长
+
+function buildCoreFromText(text) {
+  let fs = 140;
+  const pad = 30;
+  const c = document.createElement('canvas');
+  const g = c.getContext('2d');
+  const fontOf = (s) => `700 ${s}px "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif`;
+  g.font = fontOf(fs);
+  let tw = Math.max(1, Math.ceil(g.measureText(text).width));
+  /* 【宽度限制】提取像素前先量文字宽度：超过屏幕宽度 60% 就按比例
+   * 缩小字号，确保文字永远完整显示在屏幕内，绝不飘出边界。 */
+  const maxTw = W * 0.6;
+  if (tw > maxTw) {
+    fs = Math.max(24, Math.floor(fs * (maxTw / tw)));
+    g.font = fontOf(fs);
+    tw = Math.max(1, Math.ceil(g.measureText(text).width));
+  }
+  c.width = tw + pad * 2;
+  c.height = fs + pad * 2;
+  g.font = fontOf(fs);
+  g.fillStyle = '#fff';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillText(text, c.width / 2, c.height / 2);
+  const img = g.getImageData(0, 0, c.width, c.height).data;
+
+  /* 动态采样率：步长自动调整，直到粒子数落入安全区 */
+  let pts = [];
+  sampleStepUsed = CFG.SAMPLE_BASE;
+  while (true) {
+    pts = [];
+    for (let y = 0; y < c.height; y += sampleStepUsed) {
+      for (let x = 0; x < c.width; x += sampleStepUsed) {
+        if (img[(y * c.width + x) * 4 + 3] > 120) {
+          pts.push({ x: x - c.width / 2, y: y - c.height / 2 });
+        }
+      }
+    }
+    if (pts.length <= CFG.MAX_DYNAMIC || sampleStepUsed >= CFG.SAMPLE_MAX) break;
+    sampleStepUsed++;                                   // 超了 → 步长加大重采
+  }
+  /* 极端超长文本的兜底：均匀抽稀到软上限 */
+  if (pts.length > CFG.MAX_DYNAMIC) {
+    const keep = CFG.MAX_DYNAMIC, out = [];
+    for (let i = 0; i < keep; i++) out.push(pts[Math.floor(i * pts.length / keep)]);
+    pts = out;
+  }
+
+  /* 文字太短 → 补充椭圆星尘，保证云团始终饱满治愈 */
+  const minDust = 520;
+  if (pts.length < minDust) {
+    const R = Math.max(c.width, c.height) * 0.45;
+    while (pts.length < minDust) {
+      const a = Math.random() * Math.PI * 2;
+      const r = Math.sqrt(Math.random()) * R;           // 均匀圆盘采样
+      pts.push({ x: Math.cos(a) * r, y: Math.sin(a) * r * 0.6, dust: true });
+    }
+  }
+
+  /* 适配屏幕：文字点阵整体缩放到合适大小 */
+  fitScale = Math.min(1, W * 0.72 / c.width, H * 0.26 / c.height);
+  coreRadius = Math.max(c.width, c.height) * 0.5 * fitScale;
+  coreCenter.x = W / 2;
+  coreCenter.y = H * 0.16;
+
+  /* 实例化粒子（对象池分配，绝不 new 在循环里泄漏） */
+  totalSpawned = 0;
+  for (const pt of pts) {
+    const p = alloc();
+    if (!p) break;                                      // 池满即止（保险丝）
+    totalSpawned++;                                     // 按实际入池数统计，dropRate 才精确
+    p.state = PS.CORE;
+    p.ox = pt.x; p.oy = pt.y;
+    p.x = coreCenter.x + pt.x * fitScale + (Math.random() - 0.5) * 40;
+    p.y = coreCenter.y + pt.y * fitScale + (Math.random() - 0.5) * 40;
+    p.vx = 0; p.vy = 0;
+    p.size = pt.dust ? 1.2 + Math.random() * 1.2 : 1.6 + Math.random() * 1.8;
+    p.spr = (Math.random() * PALETTE.length) | 0;
+    p.base = pt.dust ? 0.45 + Math.random() * 0.25 : 0.65 + Math.random() * 0.35;
+    p.alpha = p.base;
+    p.phase = Math.random() * Math.PI * 2;
+    p.life = 0;
+    p.plated = false;
+    p.tumble = 0;
+    p.fallBoost = 0.85 + Math.random() * 0.35;   // 每颗粒子微微不同的下落个性
+  }
+}
+
+/* ================================================================
+ * 7. 第一层物理：贯穿全屏的倒置漏斗与漏沙机制
+ * ---------------------------------------------------------------
+ * 几何：上半部开口极宽（半宽 ≈ 48% 屏宽，几乎贯穿屏幕），
+ *       两侧斜壁向内收窄，汇聚到中心极小的漏孔（半宽 5px）。
+ * 捕获：下落粒子触到内壁斜面 → 进入 PLATE 态，贴上内壁。
+ * 漏斗引力逻辑：PLATE 态粒子受到沿斜面指向漏孔的分力
+ *   （用 (funnelCX - x) 的水平拉力 + 贴壁约束等效重力沿坡分量），
+ *   顺着内壁向中心漏孔滑落，在孔口排队。
+ * 漏沙速度联动：孔口闸门冷却 = 剩余时间 ÷ 漏斗内存量，
+ *   时间越长漏得越慢，时间越短漏得越快。
+ * ================================================================ */
+let funnelCX = 0, funnelTopY = 0, funnelHoleY = 0, funnelHalfW = 0;
+let funnelL = 0, funnelR = 0;
+let leakCooldown = 0;             // 漏孔闸门冷却（秒）
+let plateCount = 0;               // 上一帧漏斗内粒子数（决定本帧漏速）
+
+/* 内壁斜面方程：宽口边缘 → 漏孔的线性插值 */
+function funnelWallY(x) {
+  const ax = Math.min(Math.abs(x - funnelCX), funnelHalfW);
+  // k：0 在宽口边缘，1 在漏孔
+  const k = (funnelHalfW - ax) / (funnelHalfW - CFG.HOLE_HW);
+  return funnelTopY + Math.max(0, Math.min(1, k)) * (funnelHoleY - funnelTopY);
+}
+
+function currentLeakInterval() {
+  if (state !== S.FALLING) return 0.12;          // 结算后快速放空漏斗
+  const remain = Math.max(1, (endAt - Date.now()) / 1000);
+  // 【漏沙速度联动】严格受倒计时控制：让漏斗存量在剩余时间内匀速漏完
+  return Math.min(2.5, Math.max(0.12, remain / Math.max(1, plateCount)));
+}
+
+/* ================================================================
+ * 8. 第二层物理：底部真实堆叠与碰撞
+ * ---------------------------------------------------------------
+ * 碰撞检测：沙丘用「高度场」（每列一个高度值）表示，
+ *   它本身就是碰撞体 —— 下落粒子每帧检查自己是否触及
+ *   所在列的沙丘表面，避免了两两粒子 O(n²) 碰撞检测。
+ * 【空间网格加速】这列等宽高度场就是一个粗粒度空间网格：
+ *   按 x 一次除法定位所在列，碰撞查询 O(1)，绝不遍历其他粒子。
+ * 【底部粒子碰撞反弹算法】（绝不像图片一样重叠粘贴）：
+ *   ① 砸落瞬间：速度足够大就反弹（vy 取反 × 0.28）并侧向飞溅；
+ *   ② 贴面之后：比较左右两列高度，向更低的一侧施加滚落力，
+ *      配合滚动摩擦与微幅随机扰动，粒子翻滚/滑落、沙丘自然摊开；
+ *   ③ 入睡条件：翻滚超过 TUMBLE_MAX 秒，或水平动能耗尽 →
+ *      settle() 标记 SLEEP 并让所在列沙丘增高。
+ * 睡眠态零物理运算，节省 CPU。
+ * ================================================================ */
+let dune = new Float32Array(0);
+let duneCols = 0;
+function buildDune() {
+  duneCols = Math.max(1, Math.ceil(W / CFG.DUNE_COL));
+  dune = new Float32Array(duneCols);
+}
+
+/* 沙丘表面（列顶）高度 */
+function duneSurfaceAt(x) {
+  const col = Math.max(0, Math.min(duneCols - 1, (x / CFG.DUNE_COL) | 0));
+  return { col, y: H - 4 - dune[col] };
+}
+
+/* 入睡：粒子静止并永久性让沙丘增高（只调用一次） */
+let settledCount = 0;
+function settle(p) {
+  const col = Math.max(0, Math.min(duneCols - 1, (p.x / CFG.DUNE_COL) | 0));
+  p.x += (Math.random() - 0.5) * 6;                    // 最后轻轻散开
+  p.y = H - 4 - dune[col];
+  p.state = PS.SLEEP;                                  // ★ 睡眠：此后零物理
+  p.vx = 0; p.vy = 0;
+  const inc = p.size * 0.32;                           // 本列为主、两侧微扩散
+  dune[col] += inc * 0.6;
+  if (col > 0) dune[col - 1] += inc * 0.2;
+  if (col < duneCols - 1) dune[col + 1] += inc * 0.2;
+  const maxH = H * CFG.DUNE_MAX;
+  if (dune[col] > maxH) dune[col] = maxH;
+  settledCount++;
+}
+
+/* ---------------- 9. 状态机与流程控制 ---------------- */
+let state = S.IDLE;
+
+/* 计时（用墙钟，页面被挂起时倒计时依然准确） */
+let endAt = 0, totalSeconds = 0, lastShownSec = -1;
+
+/* 交互与停滞 */
+const mouse = { x: -999, y: -999 };
+let lastMoveMs = Date.now();        // 墙钟，避免切屏回来 rAF 跳变误判
+let idleLevel = 0;                  // 0 正常 / 1 变暗 / 2 暖橙警告
+let dim = 1, dimTarget = 1;         // 粒子亮度（平滑趋近目标）
+let warnA = 0;                      // 暖橙边缘光强度
+let recallCount = 0;                // 唤回次数
+
+/* 切屏灰白与恢复 */
+let colorRestore = 1;               // 1 彩色 → 0 灰白
+let restoring = false;              // 是否正在"鼠标唤回色彩"
+let hiddenAt = 0;
+
+/* 核心剥离节流 */
+let stripAcc = 0;
+/* 【掉落频率严格联动】dropRate = 总粒子 P ÷ (总秒数 T × 60)，
+ * 即"每帧（60fps）应剥离的粒子数"：25 分钟掉得极慢，1 分钟每帧大量剥落。 */
+let dropRate = 0;
+/* 【重力严格反比于设定时间】gravityNow = 基准重力 × (1500 ÷ T)，
+ * 25 分钟 = 基准值，1 分钟 = 25 倍重力。绝不使用固定死值。 */
+let gravityNow = CFG.GRAVITY;
+/* 【冲刺模式】剩余时间 ≤60 秒时开启：剥离暴增、重力 ×2.5、
+ * 粒子切换炽白/亮橙贴图、背景泛起橙色脉冲、倒计时转暖橙。 */
+let sprintOn = false;
+
+/* 游荡弹幕：9 组固定中英双语文案随机抽取，物理反弹漂浮，15s 生命 */
+const danmakus = [];
+let danmakuTimer = 6;                 // 距下一条弹幕的秒数
+let danmakuMilestones = {};           // 动态频率的里程碑节点是否已触发
+
+/* 【上下文变量同步】AI 学习陪跑对话框实时读取的两个全局变量：
+ * currentTask = 用户输入的当前任务名；remainingTime = 倒计时剩余分钟数。
+ * currentTask 在 start()/beginFocus() 时同步；remainingTime 由主循环
+ * 在 FALLING 态逐秒刷新，发送聊天消息前还会再同步一次（双重保险）。 */
+let currentTask = '';
+let remainingTime = 0;
+/* AI 精简后的核心节点串（如「复习物理，背单词」）：
+ * requestAdvice() 成功时由 AI 返回、失败时由本地精简兜底；
+ * 文字解构云团、HUD 任务名、聊天注入的任务名一律用它（长原文不进沙漏）。 */
+let refinedTask = '';
+
+/* 【原地冻结标志位】展开 AI 陪跑对话框时，FALLING 态原地定格：
+ * 倒计时、粒子物理、弹幕、停滞判定全部挂起（绝不是重置！）；
+ * 收起对话框或点「继续专注」后无缝续跑。pausedAt 记录冻结时刻，
+ * 用于恢复时把倒计时终点整体后移。 */
+let isPaused = false;
+let pausedAt = 0;
+
+/* 完成特效（独立短命数组，不占粒子池） */
+let bursts = [], ring = null, finishAt = 0, reportShown = false;
+
+/* 轻提示 */
+let toastTimer = 0;
+function toast(msg, ms = 2600) {
+  toastEl.textContent = msg;
+  toastEl.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.add('hidden'), ms);
+}
+
+/* —— IDLE → LOADING：唤醒星光（先向 AI 教练讨一句专注建议） —— */
+function start() {
+  const text = goalInput.value.trim();
+  if (!text) { toast('先写下今晚想专注的一件小事吧'); goalInput.focus(); return; }
+  const mins = Math.max(1, Math.min(180, parseInt(minInput.value, 10) || 25));
+  minInput.value = mins;
+  currentTask = text;                            // 同步给 AI 陪跑对话框
+  remainingTime = mins;
+  idlePanel.classList.add('hidden');
+  requestAdvice(text, mins);                     // 进入 LOADING，异步等待建议
+}
+
+/* —— SUGGEST → FALLING：点击「开始专注」后才真正进入沙漏世界 —— */
+function beginFocus() {
+  if (state !== S.SUGGEST) return;               // 防重复点击 / 乱序调用
+  /* 沙漏解构一律使用 AI 精简后的核心节点（refinedTask）；
+   * 它由 requestAdvice 在成功与降级两条路径上都已写好，此处只兜底。 */
+  const text = refinedTask || goalInput.value.trim();
+  const mins = Math.max(1, Math.min(180, parseInt(minInput.value, 10) || 25));
+
+  ac();                                          // 用户手势内解锁音频
+  bgm.currentTime = 0;
+  bgm.play().catch(() => toast('浏览器拦住了音乐，点一下页面就好'));
+  bgmTarget = 0.45;
+
+  buildCoreFromText(text);
+
+  totalSeconds = mins * 60;
+  endAt = Date.now() + totalSeconds * 1000;
+  lastShownSec = -1;
+  settledCount = 0;
+  recallCount = 0;
+  leakCooldown = 0;
+  plateCount = 0;
+  sprintOn = false;                                // 冲刺模式复位
+  hud.classList.remove('sprint');
+  /* 【掉落频率严格联动倒计时】每秒应掉落 = 总粒子 P ÷ 总秒数 T；
+   * 每秒 60 帧 ⇒ 每帧应掉落 = P ÷ (T × 60)，即 dropRate。
+   * 取总时长的 92% 作为剥离窗口，保证倒计时归零前文字恰好被"吃空"：
+   * 25 分钟（1500s）→ 极慢速剥落；1 分钟（60s）→ 每帧大量剥落。 */
+  dropRate = totalSpawned / (Math.max(10, totalSeconds * 0.92) * 60);
+  /* 【重力严格反比于设定时间】gravity = 基准重力 × (1500 ÷ T)：
+   * 25 分钟 = 基准手感，时间越短重力越大（1 分钟 = 25 倍，暴雨式下落）。
+   * 初速度同步按此反比系数缩放，绝不使用固定死值。 */
+  gravityNow = CFG.GRAVITY * (1500 / totalSeconds);
+  /* 游荡弹幕复位：清空存活气泡，首条 6 秒后飘出，里程碑重新待命 */
+  danmakus.length = 0;
+  danmakuTimer = 6;
+  danmakuMilestones = {};
+  lastMoveMs = Date.now();
+  idleLevel = 0; dim = 1; dimTarget = 1;
+  colorRestore = 1; restoring = false;
+
+  hudGoal.textContent = '「' + text + '」';
+  hud.classList.remove('hidden');
+  reportEl.classList.add('hidden');
+  suggestEl.classList.add('hidden');             // 收起 AI 建议卡
+  state = S.FALLING;
+}
+
+/* —— FALLING → FINISHED：倒计时归零或 90% 粒子归底 —— */
+function finish() {
+  state = S.FINISHED;
+  danmakus.length = 0;                         // 弹幕谢幕
+  finishAt = nowSec;
+  reportShown = false;
+  playChime();                                   // 合成风铃
+  spawnBurst();                                  // 底部柔和星云爆发
+  // 剩余核心粒子全部放行下落，经漏斗陆续归入沙丘
+  for (const p of pool) {
+    if (p.used && p.state === PS.CORE) {
+      p.state = PS.FALL;
+      p.vy = 20 + Math.random() * 30;
+    }
+  }
+  bgmTarget = 0.30;
+  document.title = 'FlowDrop · 星语心流';
+}
+
+function showReport() {
+  const settleRatio = totalSpawned ? settledCount / totalSpawned : 0;
+  // 得分 = 基础 60 + 沉降率×40 − 每次唤回扣 2，钳制 0~100
+  let score = Math.round(60 + 40 * settleRatio) - recallCount * 2;
+  score = Math.max(0, Math.min(100, score));
+  rScore.textContent = score;
+  rLine1.textContent = `唤回星光 ${recallCount} 次`;
+  rLine2.textContent = `沙丘收藏了 ${settledCount} / ${totalSpawned} 颗星星`;
+  reportEl.classList.remove('hidden');
+}
+
+/* —— FALLING → FAILING：停滞 10 秒，星光化作流星 —— */
+function fail() {
+  state = S.FAILING;
+  danmakus.length = 0;                         // 弹幕谢幕
+  warnEl.classList.add('hidden');
+  toast('星光化作流星消散了……', 3000);
+  playSigh();
+  for (const p of pool) {
+    if (p.used && (p.state === PS.CORE || p.state === PS.FALL ||
+                   p.state === PS.PLATE || p.state === PS.ORBIT ||
+                   p.state === PS.TUMBLE)) {
+      p.state = PS.METEOR;
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;   // 向上飞散
+      const sp = 260 + Math.random() * 380;
+      p.vx = Math.cos(a) * sp;
+      p.vy = Math.sin(a) * sp;
+      p.life = 1;
+    }
+  }
+  bgmTarget = 0;
+  document.title = 'FlowDrop · 星语心流';
+}
+
+/* —— FALLING 原地冻结 / 无缝恢复（展开 AI 陪跑时调用，绝不是重置！） —— */
+function pauseFocus() {
+  if (state !== S.FALLING || isPaused) return;   // 只在专注进行中才有东西可冻
+  isPaused = true;
+  pausedAt = Date.now();                         // 记下冻结时刻
+  pausedTip.classList.remove('hidden');          // 中央浮现「Focus Paused / 专注已冻结」
+}
+function resumeFocus() {
+  if (!isPaused) return;
+  isPaused = false;
+  endAt += Date.now() - pausedAt;                // 终点整体后移 = 倒计时从冻结点无缝续跑
+  lastMoveMs = Date.now();                       // 停滞计时重新起算，防恢复瞬间误触警告
+  pausedTip.classList.add('hidden');
+}
+
+/* —— 任意态 → IDLE：温柔重置 —— */
+function resetToIdle(msg) {
+  isPaused = false;                              // 解除冻结（若正处于冻结中）
+  pausedTip.classList.add('hidden');
+  sprintOn = false;                              // 冲刺模式复位
+  hud.classList.remove('sprint');
+  for (const p of pool) if (p.used) free(p);
+  buildDune();
+  bursts = []; ring = null;
+  danmakus.length = 0;                         // 清空游荡弹幕
+  settledCount = 0; recallCount = 0;
+  plateCount = 0; leakCooldown = 0;
+  if (adviceAbort) { adviceAbort.abort(); adviceAbort = null; }   // 掐掉进行中的 AI 请求
+  if (chatAbort) { chatAbort.abort(); chatAbort = null; }         // 掐掉进行中的聊天请求
+  hud.classList.add('hidden');
+  reportEl.classList.add('hidden');
+  warnEl.classList.add('hidden');
+  loadingEl.classList.add('hidden');           // 收起 LOADING 呼吸动画
+  suggestEl.classList.add('hidden');           // 收起 AI 建议卡
+  idlePanel.classList.remove('hidden');
+  state = S.IDLE;
+  document.title = 'FlowDrop · 星语心流';
+  if (msg) setTimeout(() => toast(msg, 3200), 400);
+}
+
+/* 完成时的底部星云爆发 */
+function spawnBurst() {
+  ring = { r: 10, a: 0.5 };
+  for (let i = 0; i < 90; i++) {
+    bursts.push({
+      x: W / 2 + (Math.random() - 0.5) * W * 0.7,
+      y: H - 10 - Math.random() * 20,
+      vx: (Math.random() - 0.5) * 90,
+      vy: -(140 + Math.random() * 320),
+      r: 1.5 + Math.random() * 3.5,
+      spr: (Math.random() * PALETTE.length) | 0,
+      life: 1,
+      decay: 0.45 + Math.random() * 0.5,
+    });
+  }
+}
+
+/* ================================================================
+ * 9.5 游荡弹幕系统（专注陪伴气泡）
+ * ---------------------------------------------------------------
+ * 9 组固定中英双语文案随机抽取，气泡以随机速度在夜空自由漂浮；
+ * 碰到屏幕边缘与漏斗斜边都会物理反弹（圆形包围盒 + 线段法向反射），
+ * 存活 15 秒后柔和淡出。生成频率与倒计时强绑定（见主循环的
+ * 【动态弹幕频率控制】注释）。气泡是轻量普通对象（同屏 ≤6 个），
+ * 与粒子对象池互不干涉。
+ * ================================================================ */
+const DANMAKU_TEXTS = [
+  { zh: '你在学习吗？',       en: 'Are you studying?' },
+  { zh: '有没有在偷偷摸鱼？', en: 'Slacking off again?' },
+  { zh: '眼睛看哪里呢？',     en: 'Where are your eyes looking?' },
+  { zh: '星星都在看着你哦',   en: 'The stars are watching you.' },
+  { zh: '别发呆啦，快动笔！', en: 'Stop zoning out, keep going!' },
+  { zh: '你的笔在等你拿起来', en: 'Your pen is waiting for you.' },
+  { zh: '是不是又切屏了？',   en: "Switched tabs again, didn't you?" },
+  { zh: '专注！专注！',       en: 'Focus! Focus!' },
+  { zh: '最后冲刺啦！',       en: 'Final sprint!' },
+];
+/* 剩余时间比例跌破这些节点时，各必触发一条弹幕（见主循环调度） */
+const DANMAKU_MILESTONES = [0.5, 0.45, 0.3, 0.25];
+
+function spawnDanmaku() {
+  if (danmakus.length >= CFG.DANMAKU_MAX) return;    // 同屏上限，保持空灵
+  const c = DANMAKU_TEXTS[(Math.random() * DANMAKU_TEXTS.length) | 0];
+  /* 气泡半径随英文长度自适应（主行是大字英文，容纳两行文字），钳制在 44~96 */
+  const r = Math.max(44, Math.min(96, 26 + c.en.length * 3.2));
+  const ang = Math.random() * Math.PI * 2;
+  const sp = 24 + Math.random() * 40;                // 24~64 px/s 随机速度
+  danmakus.push({
+    zh: c.zh, en: c.en,
+    x: r + 20 + Math.random() * Math.max(1, W - 2 * (r + 20)),
+    y: H * 0.08 + Math.random() * H * 0.37,          // 上半个夜空游荡
+    vx: Math.cos(ang) * sp,
+    vy: Math.sin(ang) * sp * 0.6,
+    r,
+    life: CFG.DANMAKU_LIFE,
+  });
+}
+
+function updateDanmakus(dt) {
+  /* 漏斗斜壁的斜率与法线预备（两壁镜像对称，只算一份） */
+  const m = (funnelHoleY - funnelTopY) / Math.max(1, funnelHalfW - CFG.HOLE_HW);
+  const invL = 1 / Math.sqrt(1 + m * m);
+  for (let i = danmakus.length - 1; i >= 0; i--) {
+    const d = danmakus[i];
+    d.x += d.vx * dt;
+    d.y += d.vy * dt;
+
+    /* ① 屏幕边缘反弹：圆形包围盒贴边即反向 */
+    if (d.x < d.r)     { d.x = d.r;     d.vx =  Math.abs(d.vx); }
+    if (d.x > W - d.r) { d.x = W - d.r; d.vx = -Math.abs(d.vx); }
+    if (d.y < d.r)     { d.y = d.r;     d.vy =  Math.abs(d.vy); }
+    if (d.y > H - d.r) { d.y = H - d.r; d.vy = -Math.abs(d.vy); }
+
+    /* ② 漏斗斜边反弹（圆形包围盒 + 线段法向反射）：
+     * s = 圆心到斜面的带符号距离（>0 在斜面外侧、<0 在漏斗内部）；
+     * |s| < r 且速度朝向斜面时，速度对法线做镜面反射并把圆推出壁面。 */
+    if (d.x > funnelL && d.x < funnelR &&
+        Math.abs(d.x - funnelCX) > CFG.HOLE_HW + d.r * 0.3 &&
+        d.y > funnelTopY - d.r && d.y < funnelHoleY + d.r) {
+      const s = (d.y - funnelWallY(d.x)) * invL;
+      if (Math.abs(s) < d.r) {
+        const nx = (d.x < funnelCX ? -m : m) * invL; // 斜面外法线（左壁朝左下，右壁朝右下）
+        const ny = invL;
+        const vn = d.vx * nx + d.vy * ny;
+        /* vn·s < 0 ⇒ 正在朝向斜面运动（无论从外侧还是内侧逼近）→ 镜面反射 */
+        if (vn * s < 0) {
+          d.vx -= 2 * vn * nx;
+          d.vy -= 2 * vn * ny;
+          const push = (s > 0 ? d.r : -d.r) - s;
+          d.x += nx * push;
+          d.y += ny * push;
+        }
+      }
+    }
+
+    d.life -= dt;
+    if (d.life <= 0) danmakus.splice(i, 1);    // 15s 寿命尽，移除
+  }
+}
+
+/* 弹幕绘制：径向辉光盘 + 细边圆环 + 中英两行文字，整体 lighter 发光 */
+function renderDanmakus(bright, t) {
+  const ratio = totalSeconds > 0
+    ? Math.max(0, endAt - Date.now()) / 1000 / totalSeconds : 1;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const d of danmakus) {
+    /* 透明度：入场 0.6s 淡入，尾 2s 柔和淡出 */
+    const a = Math.min(1, (CFG.DANMAKU_LIFE - d.life) / 0.6)
+            * Math.min(1, d.life / 2) * bright;
+    if (a <= 0.01) continue;
+    /* 剩余 <10% 的冲刺阶段：气泡急促脉冲，替你紧张一下 */
+    const pulse = ratio < 0.1 ? 1 + 0.08 * Math.sin(t * 6) : 1;
+    const R = d.r * pulse;
+    const g = ctx.createRadialGradient(d.x, d.y, 0, d.x, d.y, R);
+    g.addColorStop(0, `rgba(150,180,255,${0.12 * a})`);
+    g.addColorStop(1, 'rgba(150,180,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(d.x, d.y, R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = `rgba(170,195,255,${0.35 * a})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(d.x, d.y, R * 0.82, 0, Math.PI * 2); ctx.stroke();
+    /* 【排版铁律】大英文在上（13px 亮），小中文在下（9px 淡） */
+    ctx.fillStyle = `rgba(207,225,255,${0.9 * a})`;
+    ctx.font = '600 13px "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+    ctx.fillText(d.en, d.x, d.y - 7);
+    ctx.fillStyle = `rgba(207,225,255,${0.55 * a})`;
+    ctx.font = '9px "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
+    ctx.fillText(d.zh, d.x, d.y + 8);
+  }
+  ctx.restore();
+}
+
+/* ================================================================
+ * 9.8 AI 专注教练（DeepSeek API · 两段式精准逻辑）
+ * ---------------------------------------------------------------
+ * 流程：IDLE --唤醒星光--> LOADING（呼吸动画）
+ *       第一步【前置字数判断与极简提取】：输入 ≤5 字直接作为粒子文本；
+ *         >5 字调 AI 提取成 ≤4 字核心词（失败则本地精简兜底）。
+ *       第二步【硬核策略生成】：把提取任务 + 画像（年级/部别/走向）
+ *         打包发给学习法专家，返回 ≤40 字具体实操策略。
+ *       --成功--> SUGGEST（Specific Strategy 策略卡）--开始专注--> FALLING
+ *       --失败--> toast 本地兜底文案，跳过卡片直接 FALLING（绝不卡死）
+ * 沙漏世界里被解构的文字、HUD 任务名、聊天注入任务名，一律使用
+ *   提取后的 refinedTask，长原文不进沙漏。
+ * 【防翻车机制】（现场网络不好时绝不卡死）：
+ *   ① AbortController 3 秒硬超时，两步共用同一控制器，到点一起中断；
+ *   ② HTTP 非 200 / 断网 / CORS 被拒 / 响应缺字段，一律视为失败；
+ *   ③ 任何失败都自动降级：toast 说明 + 本地兜底，直接进入 FALLING。
+ * ================================================================ */
+let adviceAbort = null;                          // 进行中的请求（可取消）
+
+/* 本地兜底精简：AI 失联时，把长篇大论按标点切段，取前 3 段拼成 ≤18 字的任务串 */
+function localRefine(text) {
+  const parts = text.split(/[,，、;；。!！？?\s]+/).filter(Boolean);
+  let out = '';
+  for (const p of parts.slice(0, 3)) {
+    if (out && (out + p).length > 18) break;     // 超长度就停，保住已有片段
+    out += (out ? '，' : '') + p;
+  }
+  return out || text.slice(0, 18);
+}
+
+/* 通用 AI 调用助手：两步流程共用。
+ * 成功返回 trim 后的文本；HTTP 非 200 / 断网 / 响应缺字段一律返回 null，
+ * 由调用方决定如何降级。超时由外层唯一的 AbortController 统一掐断。 */
+async function callAI(messages, maxTokens, signal) {
+  const resp = await fetch(DEEPSEEK_API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + DEEPSEEK_API_KEY,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages,
+      max_tokens: maxTokens,
+      temperature: 0.7,
+    }),
+    signal,
+  });
+  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+  const data = await resp.json();
+  const txt = data && data.choices && data.choices[0] &&
+              data.choices[0].message && data.choices[0].message.content &&
+              data.choices[0].message.content.trim();
+  return txt || null;
+}
+
+async function requestAdvice(text, mins) {
+  state = S.LOADING;
+  suggestEl.classList.add('hidden');
+  loadingEl.classList.remove('hidden');
+  refinedTask = '';                              // 清空上一轮残留，降级路径靠它判空
+
+  /* 若上一次请求还没了结，先掐掉，避免两次请求竞态 */
+  if (adviceAbort) adviceAbort.abort();
+  const ctrl = new AbortController();
+  adviceAbort = ctrl;
+  /* ① 3 秒超时红线：两步调用共用同一个控制器，到点一起中断 */
+  const timer = setTimeout(() => ctrl.abort(), AI_TIMEOUT_MS);
+
+  let advice = null;                             // null = 失败，走降级
+  try {
+    /* ======== 第一步：前置字数判断与极简提取 ========
+     * ≤5 个字：跳过 AI 提取，原文直接作为粒子生成的文本；
+     * >5 个字：调 AI 提取成 1~2 个核心词（≤4 个中文字符，无标点无废话）。 */
+    let task = text.trim();
+    if ([...task].length > 5) {                  // 展开成数组数“字”，emoji/汉字都数得准
+      const t = await callAI([
+        { role: 'system', content: '你是一个极简的任务提取工具。请把用户输入的一段话，提取成1到2个最核心的词语，绝对不要超过4个中文字符。例如：用户说“今晚复习物理和化学还要背单词”，你只输出“理科复习”。不要标点，不要废话，直接输出词语。' },
+        { role: 'user', content: task },
+      ], 20, ctrl.signal);
+      /* 提取成功：清洗标点并钳长；提取失败：本地精简兜底，流程继续 */
+      task = t ? (t.replace(/[，。、；：,.;:\s]/g, '').slice(0, 8) || localRefine(text))
+               : localRefine(text);
+    }
+    refinedTask = task;
+    currentTask = task;                          // 聊天注入的任务名同步为提取版
+
+    /* ======== 第二步：硬核策略生成（打包任务 + 画像） ======== */
+    const grade = gradeSel.value || '未填写';
+    const dept = deptSel.value || '未填写';
+    const pathway = trackSel.value || '未填写';
+    const sys = '你是一个顶级高效学习法专家。请结合用户任务（' + task + '）、年级（' +
+      grade + '）、走向（' + pathway + '），给出1到2句话极其具体的实操策略。\n规则：\n' +
+      '1. 绝对禁止出现“加油”、“保持专注”等废话。\n' +
+      '2. 必须根据学科给出具体动作（如数学先默写公式，英语先看词根，背书用艾宾浩斯）。\n' +
+      '3. 若为国际部/出国，偏向思维导图、语感；若为国内/高考，偏向错题复盘、刷题手感。\n' +
+      '4. 字数严格控制在 40 字以内。';
+    advice = await callAI([
+      { role: 'system', content: sys },
+      { role: 'user', content: '我的任务：' + task + '\n年级：' + grade +
+          '\n部别：' + dept + '\n走向：' + pathway },
+    ], 120, ctrl.signal);
+  } catch (err) {
+    /* 超时 / 断网 / CORS / 解析失败：全部静默降级，页面绝不卡死 */
+  } finally {
+    clearTimeout(timer);
+    if (adviceAbort === ctrl) adviceAbort = null;
+  }
+
+  if (state !== S.LOADING) return;               // 期间若被重置则安静放弃
+  loadingEl.classList.add('hidden');
+
+  if (advice) {
+    /* 成功 → SUGGEST 卡：大英文 Specific Strategy + 小中文硬核策略 */
+    adviceEl.textContent = advice;
+    suggestEl.classList.remove('hidden');
+    state = S.SUGGEST;
+  } else {
+    /* 防翻车降级：toast 说明 + 本地兜底文案，直接进入 FALLING，
+     * 现场网络再差，演示流程也一定能往下走 */
+    if (!refinedTask) refinedTask = localRefine(text);   // 第一步都没来得及跑就挂了
+    currentTask = refinedTask;
+    toast('AI 教练开小差了：' + AI_FALLBACK + ' ✦');
+    state = S.SUGGEST;                           // beginFocus 的守卫要求 SUGGEST 态
+    beginFocus();                                // 直接进入沙漏世界
+  }
+}
+
+/* ================================================================
+ * 9.9 AI 学习陪跑对话框（右下角悬浮 · 可折叠）
+ * ---------------------------------------------------------------
+ * 人设：温柔但极其负责任的学习监督员。发送消息时把全局变量
+ *   currentTask（当前任务）与 remainingTime（剩余分钟）动态注入
+ *   System Prompt，于是 AI 会——
+ *   ① 正常解答学习问题；
+ *   ② 对游戏/娱乐/闲聊温柔劝阻，提醒当前任务与剩余时间并拉回注意力；
+ *   ③ 收到一天的任务计划时，生成一份清晰可执行的时间表（列表形式）。
+ * 多轮对话：携带最近 12 条历史（封顶 24 条，控制 token 消耗）。
+ * 【防翻车】5s AbortController 超时 + 任何异常都落兜底气泡，
+ *   用户永远不会卡在等待中。
+ * ================================================================ */
+const chatHistory = [];                // 多轮对话记录（{role, content}）
+let chatAbort = null;                  // 最近一次聊天请求（可取消）
+const CHAT_TIMEOUT_MS = 5000;          // 聊天 5 秒超时红线
+const CHAT_FALLBACK = '网络开小差了，但你的时间还在流逝哦，快专注吧！';
+
+/* 发送前再同步一次上下文变量（主循环的实时刷新之外的第二重保险） */
+function syncContextVars() {
+  const t = goalInput.value.trim();
+  if (t) currentTask = t;
+  if (state === S.FALLING) {
+    remainingTime = Math.max(0, Math.ceil((endAt - Date.now()) / 60000));
+  } else if (!remainingTime) {
+    remainingTime = Math.max(1, Math.min(180, parseInt(minInput.value, 10) || 25));
+  }
+}
+
+/* 追加一条气泡（role: 'user' | 'ai' | 'typing'），返回节点 */
+function addMsg(role, text) {
+  const el = document.createElement('div');
+  if (role === 'typing') {
+    el.className = 'msg ai typing';
+    el.innerHTML = '<span></span><span></span><span></span>';
+  } else {
+    el.className = 'msg ' + role;
+    el.textContent = text;
+  }
+  chatMsgs.appendChild(el);
+  chatMsgs.scrollTop = chatMsgs.scrollHeight;      // 永远滚到最新一条
+  return el;
+}
+
+/* 发送聊天消息 → 多轮对话请求 DeepSeek → 气泡呈现回复 */
+async function sendChat() {
+  const text = chatInput.value.trim();
+  if (!text) return;
+  syncContextVars();                               // 动态上下文（任务 + 剩余时间）
+  chatInput.value = '';
+  addMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  const typingEl = addMsg('typing');               // 三点等待动画
+
+  /* 5 秒超时红线（独立计时器，不掐其他请求，允许连发） */
+  const ctrl = new AbortController();
+  chatAbort = ctrl;
+  const timer = setTimeout(() => ctrl.abort(), CHAT_TIMEOUT_MS);
+
+  let reply = CHAT_FALLBACK;                       // 先把兜底气泡内容备好
+  try {
+    /* 【学习监督员人设】System Prompt 动态注入当前任务与剩余时间 */
+    const sys = '你是一个温柔但极其负责任的学习监督员。当前用户正在专注的任务是："' +
+      (currentTask || '还没写下任务') + '"，距离本次任务结束还剩："' + remainingTime +
+      '"分钟。如果用户问你学习问题，请认真解答；如果用户问你娱乐八卦等非学习内容，' +
+      '必须用温柔的语气劝阻，提醒他当前任务和剩余时间，并引导他回到学习；' +
+      '如果用户发送了一天的计划列表，请帮他生成一份详细的、符合当前时间安排的时间表。';
+    const resp = await fetch(DEEPSEEK_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + DEEPSEEK_API_KEY,
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{ role: 'system', content: sys }, ...chatHistory.slice(-12)],
+        max_tokens: 400,                           // 时间表需要更长输出空间
+        temperature: 0.7,
+      }),
+      signal: ctrl.signal,
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const data = await resp.json();
+    const txt = data && data.choices && data.choices[0] &&
+                data.choices[0].message && data.choices[0].message.content &&
+                data.choices[0].message.content.trim();
+    if (txt) reply = txt;
+  } catch (err) {
+    /* 超时 / 断网 / 报错：静默降级为兜底气泡，绝不卡在等待中 */
+  } finally {
+    clearTimeout(timer);
+    if (chatAbort === ctrl) chatAbort = null;
+  }
+
+  typingEl.remove();
+  addMsg('ai', reply);
+  chatHistory.push({ role: 'assistant', content: reply });
+  /* 历史封顶 24 条：控制 token，也保留足够上下文 */
+  if (chatHistory.length > 24) chatHistory.splice(0, chatHistory.length - 24);
+}
+
+/* ---------------- 10. 交互：引力场 / 点击磁场 / 停滞 / 切屏 / 防关闭 ---------------- */
+
+/* 鼠标（含触摸）移动：引力场中心 + 停滞唤回 + 色彩恢复 */
+window.addEventListener('pointermove', (e) => {
+  mouse.x = e.clientX;
+  mouse.y = e.clientY;
+  if (state === S.FALLING) {
+    if (idleLevel >= 1) {                        // 从变暗/警告中恢复 = 唤回一次
+      recallCount++;
+      toast('星光回来了 ✨', 1500);
+    }
+    idleLevel = 0;
+    lastMoveMs = Date.now();
+    if (colorRestore < 1) restoring = true;      // 鼠标一动，开始平滑恢复色彩
+  }
+});
+
+/* 点击触发：星尘磁场 + 顶部提示面板 */
+window.addEventListener('pointerdown', (e) => {
+  if (state !== S.FALLING) return;
+  if (e.target.closest && e.target.closest('.glass')) return;  // 点在 HUD 上不触发
+
+  // 屏幕最上方浮现淡蓝磨砂提示面板（呼吸缩放，2.5s 后平滑淡出）
+  spawnCuePanel();
+
+  // 生成微型磁场：强制剥离部分下落粒子环绕鼠标游动
+  const falling = pool.filter(p => p.used && p.state === PS.FALL);
+  const n = Math.max(1, Math.ceil(falling.length * 0.2));
+  for (let i = 0; i < n; i++) {
+    const p = falling[(Math.random() * falling.length) | 0];
+    if (p.state !== PS.FALL) continue;           // 同帧重复抽中则跳过
+    p.state = PS.ORBIT;
+    p.orbAng = Math.random() * Math.PI * 2;
+    p.orbR = 26 + Math.random() * 54;
+    p.orbSpeed = (2 + Math.random() * 2.5) * (Math.random() < 0.5 ? -1 : 1);
+    p.orbUntil = nowSec + CFG.ORBIT_TIME;
+  }
+});
+
+/* 顶部提示面板：小巧淡蓝方形磨砂，蓝色提示词 + 低饱和红警告词同屏显示 */
+function spawnCuePanel() {
+  const el = document.createElement('div');
+  el.className = 'cuepanel';
+  /* 【排版铁律】大英文在上 + 小中文在下 */
+  el.innerHTML =
+    '<div class="en">Continue focusing</div>' +
+    '<div class="zh">继续专注学习</div>' +
+    '<div class="wrnEn">Warning: Focus</div>' +
+    '<div class="wrnZh">警告：请勿分心</div>';
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('on'));  // 轻盈渐显
+  setTimeout(() => el.classList.add('bye'), 2500);      // 2.5s 后平滑淡出
+  setTimeout(() => el.remove(), 3500);                  // 动画结束移除节点
+}
+
+/* 防切屏：切走再切回 → 灰白 + 叹息 + 扣 20% 粒子 */
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = Date.now(); return; }
+  if (state !== S.FALLING) return;
+  if (Date.now() - hiddenAt < 500) return;       // 误触过滤（闪切不算）
+  colorRestore = 0.12;                           // 夜空瞬间失去色彩
+  restoring = false;                             // 等鼠标一动才开始恢复
+  playSigh();                                    // 极轻柔的叹息
+  toast('星光飘远了，轻轻动动鼠标唤回它', 3200);
+  // 强制扣除 20% 活跃粒子（柔和淡出回收）
+  const act = pool.filter(p => p.used &&
+    (p.state === PS.CORE || p.state === PS.FALL ||
+     p.state === PS.PLATE || p.state === PS.ORBIT));
+  const n = Math.ceil(act.length * 0.2);
+  for (let i = 0; i < n; i++) {
+    const p = act[(Math.random() * act.length) | 0];
+    p.state = PS.FADE;
+  }
+  // 重置停滞计时，给用户回神的时间
+  lastMoveMs = Date.now();
+  idleLevel = 0;
+  warnEl.classList.add('hidden');
+});
+
+/* 防退出拦截：任务进行中刷新/关闭时弹出原生确认框 */
+window.addEventListener('beforeunload', (e) => {
+  if (state === S.FALLING) {
+    e.preventDefault();
+    e.returnValue = '你的星光正在消散，真的要离开吗？';
+  }
+});
+
+/* 鼠标引力场：半径 150px 内柔和吸引（作用于核心/下落/漏斗内粒子） */
+function applyMouse(p, dt) {
+  const dx = mouse.x - p.x, dy = mouse.y - p.y;
+  const d2 = dx * dx + dy * dy, R = CFG.MOUSE_R;
+  if (d2 < R * R && d2 > 1) {
+    const d = Math.sqrt(d2);
+    const f = CFG.MOUSE_F * (1 - d / R);         // 越近引力越强的线性衰减
+    p.vx += dx / d * f * dt;
+    p.vy += dy / d * f * dt;
+  }
+}
+
+/* 【粒子剥离逻辑】从云团随机剥离一粒 → 下落态。
+ * 粒子本身就是文字上的一个像素点：它一旦离开 CORE 态，
+ * 顶部文字上对应的像素点就同步消失。
+ * 调用节奏由主循环的 stripAcc 节流器按 stripRate 匀速触发，
+ * 每次触发剥离 1~2 粒，直到整个文字被完全"吃空"。 */
+function stripOne() {
+  for (let tries = 0; tries < 24; tries++) {
+    const p = pool[(Math.random() * pool.length) | 0];
+    if (p.used && p.state === PS.CORE) {
+      p.state = PS.FALL;
+      p.vx = (Math.random() - 0.5) * 14;
+      p.vy = (6 + Math.random() * 10) * (gravityNow / CFG.GRAVITY);   // 初速随反比重力缩放
+      return;
+    }
+  }
+}
+
+/* ---------------- 11. 主循环 ---------------- */
+let lastT = 0;
+
+function loop(ts) {
+  const t = ts / 1000;
+  let dt = t - lastT;
+  lastT = t;
+  if (dt > 0.05) dt = 0.05;                      // 掉帧保护：物理步长封顶
+  if (dt < 0) dt = 0;
+  nowSec = t;                                    // 供事件回调读取的当前时刻
+
+  /* 【原地冻结】物理与渲染全部挂起：画布保留最后一帧像素，
+   * 画面定格在当前瞬间；lastT 照常刷新，恢复时 dt 不会暴涨，
+   * 粒子从冻结的位置无缝继续下落。 */
+  if (isPaused) {
+    requestAnimationFrame(loop);
+    return;
+  }
+
+  update(dt, t);
+  render(t);
+  requestAnimationFrame(loop);
+}
+
+function update(dt, t) {
+  /* BGM 音量平滑趋近目标（淡入淡出，从不硬切） */
+  if (bgm.volume !== bgmTarget) {
+    bgm.volume += (bgmTarget - bgm.volume) * Math.min(1, dt * 2.5);
+    if (Math.abs(bgm.volume - bgmTarget) < 0.01) {
+      bgm.volume = bgmTarget;
+      if (bgmTarget === 0) bgm.pause();
+    }
+  }
+
+  /* 背景流星 */
+  meteorTimer -= dt;
+  if (meteorTimer <= 0) { spawnMeteor(); meteorTimer = 5 + Math.random() * 9; }
+  meteors = meteors.filter(m => {
+    m.x += m.vx * dt; m.y += m.vy * dt; m.life -= dt * 0.9;
+    return m.life > 0 && m.y < H + 50;
+  });
+
+  /* 完成特效 */
+  if (ring) { ring.r += 620 * dt; ring.a -= dt * 0.45; if (ring.a <= 0) ring = null; }
+  bursts = bursts.filter(b => {
+    b.vy += 150 * dt;
+    b.x += b.vx * dt; b.y += b.vy * dt;
+    if (b.y > H - 6) { b.y = H - 6; b.vy *= -0.25; b.vx *= 0.7; }
+    b.life -= dt * b.decay;
+    return b.life > 0;
+  });
+
+  /* 漏孔闸门冷却 */
+  if (leakCooldown > 0) leakCooldown -= dt;
+
+  /* FALLING 态专属逻辑 */
+  if (state === S.FALLING) {
+    // 倒计时（墙钟驱动）
+    const remain = Math.max(0, endAt - Date.now());
+    remainingTime = Math.max(0, Math.ceil(remain / 60000));   // 实时同步给 AI 陪跑对话框
+    const sec = Math.ceil(remain / 1000);
+    if (sec !== lastShownSec) {
+      lastShownSec = sec;
+      const mm = String((sec / 60) | 0).padStart(2, '0');
+      const ss = String(sec % 60).padStart(2, '0');
+      hudTime.textContent = mm + ':' + ss;
+      document.title = mm + ':' + ss + ' · FlowDrop';
+    }
+    if (remain <= 0) finish();
+
+    /* 【冲刺模式】剩余 ≤60 秒：开启炽热终章（归零瞬间由 finish 接管） */
+    sprintOn = remain > 0 && remain <= 60000;
+    hud.classList.toggle('sprint', sprintOn);    // 倒计时转暖橙
+
+    /* 【核心漂浮动画·下沉】centerY += 0.2/帧（60fps 基准，dt 折算帧步），
+     * 慢慢下降；到下限后悬浮于漏斗宽口上方。 */
+    coreCenter.y = Math.min(H * CFG.CORE_LOW_Y, coreCenter.y + 0.2 * (dt * 60));
+
+    /* 【严格 dropRate 剥离】每帧应剥离 dropRate 粒（= P ÷ (T×60)），
+     * dt 折算成 60fps 帧数累加；每凑满 1 粒精确剥离 1 粒，
+     * 顶部文字同步消瘦，倒计时归零前恰好"吃空"。 */
+    stripAcc += dropRate * (dt * 60) * (sprintOn ? 3 : 1);   // 冲刺期剥离速度暴增 3 倍
+    let guard = 40;
+    while (stripAcc >= 1 && guard-- > 0) {
+      stripAcc--;
+      stripOne();                                // 精确剥离 1 粒，速率严格 = P/T
+    }
+
+    /* 【动态弹幕频率控制】弹幕生成节奏与倒计时强绑定：
+     *   剩余 >50%：每 15s 一条（悠然陪伴）；
+     *   跌破 50% / 45% / 30% / 25% 四个里程碑：各必触发一条（节点提醒）；
+     *   剩余 10%~50%：每 7s 一条（渐渐紧凑）；
+     *   剩余 <10%：每 4s 一条（最后冲刺）。 */
+    const ratio = totalSeconds > 0 ? (remain / 1000) / totalSeconds : 0;
+    for (const mk of DANMAKU_MILESTONES) {
+      if (ratio <= mk && !danmakuMilestones[mk]) {
+        danmakuMilestones[mk] = true;
+        spawnDanmaku();
+      }
+    }
+    danmakuTimer -= dt;
+    if (danmakuTimer <= 0) {
+      spawnDanmaku();
+      danmakuTimer = ratio > 0.5 ? 15 : ratio > 0.1 ? 7 : 4;
+    }
+    updateDanmakus(dt);
+
+    // 停滞三段判定（墙钟，切屏回来不会误判）
+    const idle = (Date.now() - lastMoveMs) / 1000;
+    if (idle >= CFG.IDLE_FAIL) {
+      fail();
+    } else if (idle >= CFG.IDLE_WARN) {
+      if (idleLevel < 2) { idleLevel = 2; warnEl.classList.remove('hidden'); }
+      dimTarget = 0.45;
+    } else if (idle >= CFG.IDLE_DIM) {
+      if (idleLevel < 1) idleLevel = 1;
+      dimTarget = 0.6;
+      warnEl.classList.add('hidden');
+    } else {
+      idleLevel = 0;
+      dimTarget = 1;
+      warnEl.classList.add('hidden');
+    }
+  }
+
+  /* 全局强度平滑 */
+  dim += (dimTarget - dim) * Math.min(1, dt * 3);
+  warnA += ((idleLevel === 2 ? 1 : 0) - warnA) * Math.min(1, dt * 3);
+  if (restoring) {                               // 切屏灰白 → 平滑恢复色彩
+    colorRestore = Math.min(1, colorRestore + dt / 2);
+    if (colorRestore >= 1) restoring = false;
+  }
+
+  /* 粒子统一更新（单趟遍历，顺手统计各态数量）
+   * 【核心漂浮动画·摇摆与呼吸】严格按指定公式（Date.now() 墙钟驱动）：
+   *   centerX = 初始X + sin(now/800)*20 （左右摇摆 ±20px）
+   *   scale   = 1 + sin(now/500)*0.05  （呼吸缩放 ±5%） */
+  const breath = 1 + Math.sin(Date.now() / 500) * 0.05;
+  const cx = W / 2 + Math.sin(Date.now() / 800) * 20;
+  const cy = coreCenter.y;
+  /* 冲刺期重力 ×2.5（基准反比重力之上再增压，终章暴雨式坠落） */
+  const gNow = gravityNow * (sprintOn ? 2.5 : 1);
+  let cCore = 0, cFall = 0, cPlate = 0, cOrbit = 0, cTumble = 0, cMeteor = 0;
+
+  for (const p of pool) {
+    if (!p.used) continue;
+    switch (p.state) {
+
+      case PS.CORE: {                            // 云团态：弹簧追踪移动目标
+        cCore++;
+        const tx = cx + p.ox * fitScale * breath;
+        const ty = cy + p.oy * fitScale * breath;
+        p.vx += (tx - p.x) * 5.5 * dt;
+        p.vy += (ty - p.y) * 5.5 * dt;
+        const dmp = Math.exp(-4 * dt);           // 阻尼，让运动如丝般顺滑
+        p.vx *= dmp; p.vy *= dmp;
+        applyMouse(p, dt);
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.alpha = p.base * (0.75 + 0.25 * Math.sin(t * 1.6 + p.phase));
+        break;
+      }
+
+      case PS.FALL: {                            // 下落态：重力 + 微风摇摆 + 引力场
+        cFall++;
+        /* 重力 × 反比时间系数（冲刺 ×2.5）× 个体系数：倒计时越短落得越快 */
+        p.vy += gNow * p.fallBoost * dt;
+        p.vx += Math.sin(t * 2 + p.phase) * 10 * dt;
+        p.vx *= Math.exp(-0.6 * dt);
+        applyMouse(p, dt);
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        /* 【边界碰撞拦截】撞到屏幕左右边缘 → 强制弹回场内，绝不飞出屏幕 */
+        if (p.x < 2)     { p.x = 2;     p.vx =  Math.abs(p.vx) * 0.5; }
+        if (p.x > W - 2) { p.x = W - 2; p.vx = -Math.abs(p.vx) * 0.5; }
+        // 第一层物理：触到漏斗内壁 → 进入 PLATE 滑行（已穿孔的不再捕获）
+        if (!p.plated && p.vy > 0 && p.x > funnelL && p.x < funnelR) {
+          const wy = funnelWallY(p.x);
+          if (p.y >= wy && p.y <= wy + 30) {
+            p.state = PS.PLATE;
+            p.y = wy;
+            p.vx *= 0.4;
+            break;
+          }
+        }
+        // 第二层物理：触到沙丘表面 → 进入翻滚碰撞（绝不直接定格重叠）
+        const s0 = duneSurfaceAt(p.x);
+        if (p.y >= s0.y && p.vy > 0) {
+          p.state = PS.TUMBLE;
+          p.tumble = 0;
+          p.y = s0.y;
+          p.vy = -Math.min(Math.abs(p.vy) * 0.28, 55);   // ① 砸落反弹（弹开）
+          p.vx += (Math.random() - 0.5) * 34;            //    碰撞瞬间的侧向飞溅
+        }
+        break;
+      }
+
+      case PS.PLATE: {                           // 漏斗态：沿内壁滑向极小漏孔
+        cPlate++;
+        /* 【漏斗引力逻辑】水平方向受指向漏孔的拉力（等效重力沿斜面的分量），
+         * 垂直方向用贴壁约束贴住斜面，于是粒子顺着内壁向中心滑落。 */
+        p.vx += (funnelCX - p.x) * 2.2 * dt;
+        p.vx *= Math.exp(-1.1 * dt);             // 壁面摩擦
+        p.x += p.vx * dt;
+        p.y += (funnelWallY(p.x) - p.y) * Math.min(1, dt * 10);
+        applyMouse(p, dt * 0.4);                 // 漏斗内引力减弱，仍可拨动
+        // 抵达漏孔：闸门按倒计时节奏放行（时间越长漏得越慢）
+        if (Math.abs(p.x - funnelCX) < CFG.HOLE_HW + 2 && leakCooldown <= 0) {
+          p.state = PS.FALL;
+          p.plated = true;                       // 标记已穿透，不再入漏斗
+          p.vy = (24 + Math.random() * 8) * (gravityNow / CFG.GRAVITY);   // 穿孔初速随反比重力
+          p.vx *= 0.2;
+          leakCooldown = currentLeakInterval();
+        }
+        p.alpha = p.base * (0.75 + 0.25 * Math.sin(t * 1.6 + p.phase));
+        break;
+      }
+
+      case PS.TUMBLE: {                          // 翻滚碰撞态：弹跳 / 滚落 / 滑落
+        cTumble++;
+        p.tumble += dt;
+        p.vy += gNow * dt;                       // 重力同样严格反比于设定时间（冲刺 ×2.5）
+        p.vx *= Math.exp(-1.6 * dt);             // 滚动摩擦
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        /* 【边界碰撞拦截】翻滚粒子同样强制弹回场内 */
+        if (p.x < 2)     { p.x = 2;     p.vx =  Math.abs(p.vx) * 0.5; }
+        if (p.x > W - 2) { p.x = W - 2; p.vx = -Math.abs(p.vx) * 0.5; }
+        const sfc = duneSurfaceAt(p.x);
+        if (p.y >= sfc.y) {                      // 压在沙面上
+          p.y = sfc.y;
+          if (p.vy > 34) {
+            p.vy = -p.vy * 0.28;                 // 还有动能 → 再弹一次
+          } else {
+            p.vy = 0;
+            /* ② 向低处滚落：比较左右列高，低的一侧产生滚动力 */
+            const hl = dune[sfc.col > 0 ? sfc.col - 1 : sfc.col];
+            const hr = dune[sfc.col < duneCols - 1 ? sfc.col + 1 : sfc.col];
+            p.vx += (hl - hr) * 4.5 * dt + (Math.random() - 0.5) * 8 * dt;
+          }
+        }
+        /* ③ 动能耗尽或翻滚超时 → 入睡（沙丘在此列增高） */
+        if (p.tumble > CFG.TUMBLE_MAX || (p.vy === 0 && Math.abs(p.vx) < 3 && p.tumble > 0.25)) {
+          settle(p);
+        }
+        p.alpha = p.base;
+        break;
+      }
+
+      case PS.ORBIT: {                           // 点击磁场：环绕鼠标游动
+        cOrbit++;
+        p.orbAng += p.orbSpeed * dt;
+        const tx = mouse.x + Math.cos(p.orbAng) * p.orbR;
+        const ty = mouse.y + Math.sin(p.orbAng) * p.orbR * 0.8;
+        p.vx += (tx - p.x) * 7 * dt;
+        p.vy += (ty - p.y) * 7 * dt;
+        const od = Math.exp(-3.5 * dt);
+        p.vx *= od; p.vy *= od;
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.alpha = p.base * (0.8 + 0.2 * Math.sin(t * 3 + p.phase));
+        if (t > p.orbUntil) { p.state = PS.FALL; p.vy = 10; }  // 磁场到时，回归下落
+        break;
+      }
+
+      case PS.SLEEP:                             // ★ 睡眠态：仅呼吸微光，零物理计算
+        p.alpha = p.base * (0.65 + 0.35 * Math.sin(t * 1.2 + p.phase));
+        break;
+
+      case PS.FADE:                              // 切屏惩罚：柔和淡出后回池
+        p.alpha -= dt * 1.4;
+        if (p.alpha <= 0) free(p);
+        break;
+
+      case PS.METEOR: {                          // 失败流星：向上飞散
+        cMeteor++;
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.life -= dt * 0.7;
+        p.alpha = Math.max(0, p.life) * p.base;
+        if (p.life <= 0 || p.y < -60 || p.x < -60 || p.x > W + 60) free(p);
+        break;
+      }
+    }
+  }
+  plateCount = cPlate;                           // 供下一帧漏速计算
+
+  /* 90% 粒子归底 → 提前完成 */
+  if (state === S.FALLING && settledCount > 0 &&
+      settledCount / (settledCount + cCore + cFall + cPlate + cOrbit + cTumble) >= 0.9) {
+    finish();
+  }
+  /* 失败流星全部消散 → 重置回 IDLE */
+  if (state === S.FAILING && cMeteor === 0) {
+    resetToIdle('没关系，深呼吸，我们重新开始');
+  }
+  /* 完成后延迟 1.4s 展示结算卡（先看一眼星云爆发） */
+  if (state === S.FINISHED && !reportShown && nowSec - finishAt > 1.4) {
+    reportShown = true;
+    showReport();
+  }
+}
+
+/* 倒置漏斗绘制：极宽上开口 + 收窄斜壁 + 极小漏孔 + 漏下光柱 */
+function drawFunnel(bright) {
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+
+  // 漏斗内部极淡的体积光（宽口到漏孔的梯形区域）
+  ctx.beginPath();
+  ctx.moveTo(funnelL, funnelTopY);
+  ctx.lineTo(funnelR, funnelTopY);
+  ctx.lineTo(funnelCX + CFG.HOLE_HW, funnelHoleY);
+  ctx.lineTo(funnelCX - CFG.HOLE_HW, funnelHoleY);
+  ctx.closePath();
+  const fg = ctx.createLinearGradient(0, funnelTopY, 0, funnelHoleY);
+  fg.addColorStop(0, `rgba(170,190,255,${0.045 * bright})`);
+  fg.addColorStop(1, `rgba(170,190,255,${0.015 * bright})`);
+  ctx.fillStyle = fg;
+  ctx.fill();
+
+  // 两侧内壁：三层线宽叠加模拟辉光
+  const passes = [[6, 0.05], [3, 0.13], [1.4, 0.5]];
+  for (const pass of passes) {
+    const lw = pass[0], a = pass[1];
+    ctx.strokeStyle = `rgba(190,205,255,${a * bright})`;
+    ctx.lineWidth = lw;
+    for (const sgn of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(funnelCX + sgn * funnelHalfW, funnelTopY);   // 宽口边缘
+      ctx.lineTo(funnelCX + sgn * CFG.HOLE_HW, funnelHoleY);  // 漏孔边缘
+      ctx.stroke();
+    }
+  }
+
+  // 漏孔两端亮珠
+  for (const sgn of [-1, 1]) {
+    const sz = 22;
+    ctx.globalAlpha = 0.8 * bright;
+    ctx.drawImage(SPR[2], funnelCX + sgn * CFG.HOLE_HW - sz / 2, funnelHoleY - sz / 2, sz, sz);
+  }
+  ctx.globalAlpha = 1;
+
+  // 漏孔下方流沙光柱（直达底部沙丘）
+  const lg = ctx.createLinearGradient(0, funnelHoleY, 0, H);
+  lg.addColorStop(0, `rgba(200,215,255,${0.08 * bright})`);
+  lg.addColorStop(1, 'rgba(200,215,255,0)');
+  ctx.fillStyle = lg;
+  ctx.fillRect(funnelCX - CFG.HOLE_HW, funnelHoleY, CFG.HOLE_HW * 2, H - funnelHoleY);
+  ctx.restore();
+}
+
+function render(t) {
+  const bright = dim * (0.35 + 0.65 * colorRestore);   // 全局亮度因子
+
+  /* ① 夜空渐变 */
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, W, H);
+
+  /* ①·五 【冲刺模式】背景泛起橙色脉冲：从沙丘上方缓缓呼吸的暖光 */
+  if (sprintOn) {
+    const pulse = 0.05 + 0.045 * (0.5 + 0.5 * Math.sin(Date.now() / 180));
+    const og = ctx.createRadialGradient(
+      W / 2, H * 0.72, 0, W / 2, H * 0.72, Math.max(W, H) * 0.75);
+    og.addColorStop(0, `rgba(255,150,60,${pulse})`);
+    og.addColorStop(1, 'rgba(255,120,40,0)');
+    ctx.fillStyle = og;
+    ctx.fillRect(0, 0, W, H);
+  }
+
+  /* ② 缓慢闪烁的静态星辰 */
+  ctx.fillStyle = '#cdd8ff';
+  for (const s of stars) {
+    ctx.globalAlpha = (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * s.s + s.p))) * bright;
+    ctx.fillRect(s.x, s.y, s.r, s.r);
+  }
+  ctx.globalAlpha = 1;
+
+  /* ③ 偶尔划过的流星 */
+  for (const m of meteors) {
+    const tx = m.x - m.vx * 0.18, ty = m.y - m.vy * 0.18;
+    const gr = ctx.createLinearGradient(m.x, m.y, tx, ty);
+    gr.addColorStop(0, `rgba(220,230,255,${0.8 * m.life * bright})`);
+    gr.addColorStop(1, 'rgba(220,230,255,0)');
+    ctx.strokeStyle = gr;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.moveTo(m.x, m.y); ctx.lineTo(tx, ty); ctx.stroke();
+  }
+
+  /* ④ 底部地表微光（托住发光沙丘的"地面"） */
+  const gg = ctx.createLinearGradient(0, H - 30, 0, H);
+  gg.addColorStop(0, 'rgba(150,170,255,0)');
+  gg.addColorStop(1, `rgba(150,170,255,${0.08 * bright})`);
+  ctx.fillStyle = gg;
+  ctx.fillRect(0, H - 30, W, 30);
+
+  /* ⑤ 核心背板大辉光（让云团看起来像星云） */
+  if (state === S.FALLING || state === S.FAILING) {
+    /* 与 update() 同一套漂浮公式，辉光跟着文字一起摇摆呼吸 */
+    const breath = 1 + Math.sin(Date.now() / 500) * 0.05;
+    const cx = W / 2 + Math.sin(Date.now() / 800) * 20, cy = coreCenter.y;
+    const R = coreRadius * 1.5 * breath;
+    const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, R);
+    cg.addColorStop(0, `rgba(150,170,255,${0.10 * bright})`);
+    cg.addColorStop(1, 'rgba(150,170,255,0)');
+    ctx.fillStyle = cg;
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill();
+  }
+
+  /* ⑥ 倒置漏斗（LOADING/SUGGEST 不出现，专注/结算/失败时才出现） */
+  if (state === S.FALLING || state === S.FINISHED || state === S.FAILING) drawFunnel(bright);
+
+  /* ⑦ 粒子：叠加发光混合（lighter）+ 预渲染辉光贴图 */
+  ctx.globalCompositeOperation = 'lighter';
+  const sprSet = sprintOn ? SPR_HOT : SPR;       // 冲刺期粒子切换炽白/亮橙
+  for (const p of pool) {
+    if (!p.used || p.alpha <= 0) continue;
+    const sz = p.size * 6;
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.alpha * bright));
+    ctx.drawImage(sprSet[p.spr], p.x - sz / 2, p.y - sz / 2, sz, sz);
+    if (p.state === PS.METEOR) {                 // 流星尾迹
+      ctx.globalAlpha *= 0.5;
+      ctx.strokeStyle = 'rgba(200,220,255,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      ctx.lineTo(p.x - p.vx * 0.08, p.y - p.vy * 0.08);
+      ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
+
+  /* ⑦·5 游荡弹幕（在粒子层之上、特效层之下） */
+  if (danmakus.length) renderDanmakus(bright, t);
+
+  /* ⑧ 完成特效：扩散光环 + 星云喷涌 */
+  if (ring) {
+    ctx.strokeStyle = `rgba(190,210,255,${ring.a})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(W / 2, H - 10, ring.r, Math.PI, 0); ctx.stroke();
+  }
+  if (bursts.length) {
+    ctx.globalCompositeOperation = 'lighter';
+    for (const b of bursts) {
+      const sz = b.r * 5;
+      ctx.globalAlpha = Math.max(0, b.life) * 0.9;
+      ctx.drawImage(SPR[b.spr], b.x - sz / 2, b.y - sz / 2, sz, sz);
+    }
+    ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = 'source-over';
+  }
+
+  /* ⑨ 停滞 6s：暖橙边缘柔光（绝不刺眼） */
+  if (warnA > 0.01) {
+    ctx.globalAlpha = warnA;
+    ctx.fillStyle = warnGrad;
+    ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = 1;
+  }
+
+  /* ⑩ 鼠标引力场的柔光可视化 */
+  if (state === S.FALLING && mouse.x > -100) {
+    const mg = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, CFG.MOUSE_R);
+    mg.addColorStop(0, 'rgba(200,215,255,0.10)');
+    mg.addColorStop(1, 'rgba(200,215,255,0)');
+    ctx.fillStyle = mg;
+    ctx.beginPath(); ctx.arc(mouse.x, mouse.y, CFG.MOUSE_R, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(200,215,255,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  /* ⑪ 切屏灰白罩（colorRestore<1 时覆盖） */
+  if (colorRestore < 1) {
+    ctx.fillStyle = `rgba(168,174,190,${(1 - colorRestore) * 0.55})`;
+    ctx.fillRect(0, 0, W, H);
+  }
+}
+
+/* ---------------- 12. 尺寸自适应 ---------------- */
+function onResize() {
+  DPR = Math.min(2, window.devicePixelRatio || 1);   // DPR 封顶 2，保帧率
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * DPR;
+  canvas.height = H * DPR;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+
+  skyGrad = ctx.createLinearGradient(0, 0, 0, H);
+  skyGrad.addColorStop(0, '#0f172a');                // 顶部深紫蓝
+  skyGrad.addColorStop(1, '#1e1b4b');                // 底部深空蓝
+
+  warnGrad = ctx.createRadialGradient(
+    W / 2, H / 2, Math.min(W, H) * 0.35,
+    W / 2, H / 2, Math.max(W, H) * 0.75
+  );
+  warnGrad.addColorStop(0, 'rgba(255,170,90,0)');
+  warnGrad.addColorStop(1, 'rgba(255,150,60,0.20)');
+
+  /* 倒置漏斗几何【严格对称】：漏孔锁定 canvas.width / 2 正中心；
+   * 左壁从 X=0 收向中心、右壁从 X=W 收向中心，两条镜像线段，
+   * 斜边 X 坐标随窗口宽度实时计算，全屏无一处"漏网之口"。 */
+  funnelCX = W / 2;
+  funnelTopY = H * CFG.FUNNEL_TOP;
+  funnelHoleY = H * CFG.FUNNEL_NECK;
+  funnelHalfW = W / 2;               // 半宽 = 半屏 ⇒ 斜壁起点恰好在 X=0 与 X=W
+  funnelL = 0;
+  funnelR = W;
+
+  buildStars();
+
+  /* 沙丘按宽度比例迁移，窗口拉伸不塌 */
+  const old = dune, oldCols = duneCols;
+  buildDune();
+  if (oldCols > 1) {
+    for (let i = 0; i < duneCols; i++) {
+      dune[i] = old[Math.floor(i / duneCols * oldCols)];
+    }
+  }
+}
+window.addEventListener('resize', onResize);
+/* 移动端地址栏伸缩只触发 visualViewport 变化：同样重置 Canvas，防变形 */
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', onResize);
+}
+
+/* ---------------- 13. UI 事件绑定 ---------------- */
+startBtn.addEventListener('click', start);
+focusBtn.addEventListener('click', beginFocus);   // SUGGEST 卡片上的「开始专注」
+againBtn.addEventListener('click', () => resetToIdle());
+
+/* ---- AI 陪跑对话框：展开 / 收起 / 发送（展开即原地冻结，收起即无缝恢复） ---- */
+chatFab.addEventListener('click', () => {                 // 点击星光钮：展开或收起对话框
+  chatPanel.classList.toggle('hidden');
+  if (!chatPanel.classList.contains('hidden')) {
+    chatInput.focus();                           // 展开时直接聚焦输入框
+    pauseFocus();                                // FALLING 中展开 → 原地冻结（不清粒子/倒计时）
+  } else {
+    resumeFocus();                               // 再点收起 → 无缝恢复
+  }
+});
+chatClose.addEventListener('click', () => {
+  chatPanel.classList.add('hidden');
+  resumeFocus();                                 // × 收起 → 无缝恢复
+});
+resumeBtn.addEventListener('click', () => {      // 「继续专注 Resume」按钮
+  chatPanel.classList.add('hidden');
+  resumeFocus();
+});
+chatSend.addEventListener('click', sendChat);             // 点击发送
+chatInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendChat(); });  // 回车发送
+goalInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') start(); });
+minInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') start(); });
+
+/* ---------------- 14. 启动 ---------------- */
+onResize();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
