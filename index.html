@@ -190,6 +190,62 @@ button:active { transform: translateY(0); }
 #report p { font-size: 13px; color: rgba(214, 222, 255, 0.7); letter-spacing: 1px; line-height: 1.9; }
 #report button { margin-top: 16px; font-size: 14px; padding: 11px 30px; }
 
+/* ---------- 8.5 RESTING 晨曦休息卡（浅蓝晨空毛玻璃，深色文字） ---------- */
+#resting {
+  position: fixed; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(400px, calc(100vw - 48px));
+  padding: 30px 30px 26px;
+  display: flex; flex-direction: column; gap: 14px;
+  text-align: center; z-index: 30;
+  color: #33465e;                                /* 晨曦场景用深色文字，拒绝白字看不清 */
+  background: rgba(255, 255, 255, 0.34);       /* 晨光里的白毛玻璃 */
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow: 0 12px 44px rgba(90, 130, 190, 0.28),
+              inset 0 1px 0 rgba(255, 255, 255, 0.65);
+}
+#resting .restTag .en {
+  display: block; font-size: 20px; font-weight: 700;
+  letter-spacing: 3px; color: #3d5a80;
+}
+#resting .restTag .zh {
+  display: block; font-size: 12px; letter-spacing: 3px;
+  color: rgba(61, 90, 128, 0.72); margin-top: 4px;
+}
+#restTime {
+  font-size: 42px; font-weight: 700; letter-spacing: 4px;
+  color: #2f4a6e; font-variant-numeric: tabular-nums;
+}
+/* 内层书单小卡：半透明白，托住书名与推荐语 */
+#resting .restBook {
+  background: rgba(255, 255, 255, 0.40);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 14px; padding: 14px 16px;
+}
+#resting .restLabel .en {
+  display: block; font-size: 13px; font-weight: 700;
+  letter-spacing: 2px; color: #5b7ba3;
+}
+#resting .restLabel .zh {
+  display: block; font-size: 11px; margin-top: 2px;
+  color: rgba(91, 123, 163, 0.80);
+}
+#restBookTitle {
+  font-size: 16px; font-weight: 700; color: #2f4a6e;
+  margin-top: 10px; line-height: 1.55;
+}
+#restBookQuote {
+  font-size: 13px; color: rgba(47, 74, 110, 0.85);
+  margin-top: 6px; line-height: 1.65;
+}
+/* 继续按钮：柔和的晨蓝渐变，覆盖通用按钮的深紫 */
+#restContinue {
+  margin-top: 2px;
+  background: linear-gradient(120deg, #7fb3e8, #a5c8f0);
+  box-shadow: 0 6px 22px rgba(127, 179, 232, 0.45);
+}
+#restContinue:hover { filter: brightness(1.06); }
+
 /* ---------- 9. 点击提示面板（屏幕最上方 · 小巧方形 · 淡蓝磨砂 · 呼吸缩放） ---------- */
 .cuepanel {
   position: fixed; top: 24px; left: 50%;
@@ -512,7 +568,29 @@ button:active { transform: translateY(0); }
   <div class="score"><span id="rScore">0</span><em>分</em></div>
   <p id="rLine1"></p>
   <p id="rLine2"></p>
-  <button id="againBtn">再次唤醒</button>
+  <button id="againBtn">🌅 进入 15 分钟休息</button>
+</div>
+
+<!-- ▶ 状态四：RESTING 晨曦休息（强制 15 分钟）
+     书单从"写死数组"升级为【动态学科关联推荐】：
+     进入休息即调 DeepSeek，按刚完成的学科推 1 本轻松小说；
+     3 秒超时/断网/报错一律降级为本地兜底《银河系漫游指南》，绝不空白。
+     排版铁律：大英文在上 + 小中文在下 -->
+<div id="resting" class="glass hidden">
+  <div class="restTag">
+    <span class="en">Recharge Time</span>
+    <span class="zh">晨曦休息 · 强制 15 分钟</span>
+  </div>
+  <div id="restTime">15:00</div>
+  <div class="restBook">
+    <div class="restLabel">
+      <span class="en">A Book For You</span>
+      <span class="zh">与你刚才的学科轻轻相关</span>
+    </div>
+    <div id="restBookTitle">正在为你挑一本书…</div>
+    <div id="restBookQuote"></div>
+  </div>
+  <button id="restContinue" class="hidden">✦ 继续 Continue</button>
 </div>
 
 <!-- ▶ 右下角悬浮：AI 学习陪跑对话框（可折叠，绝不遮挡中央漏斗） -->
@@ -536,10 +614,11 @@ button:active { transform: translateY(0); }
 <script>
 'use strict';
 /* ============================================================
- * FlowDrop · 星语心流 —— 逻辑层（v1.10.1：修复 AI 光球被通用按钮内边距撑扁）
+ * FlowDrop · 星语心流 —— 逻辑层（v1.11.0：RESTING 晨曦休息 + 动态学科书单）
  * 模块：0 配置 → 1 DOM/画布 → 2 音频 → 3 精灵 → 4 星空 →
  *       5 粒子池 → 6 文本采样 → 7 倒置漏斗 → 8 沙丘碰撞 →
- *       9 状态机（含 LOADING/SUGGEST）→ 9.5 游荡弹幕 → 9.8 AI 教练 →
+ *       9 状态机（含 LOADING/SUGGEST）→ 9.5 游荡弹幕 →
+ *       9.7 RESTING 晨曦休息 → 9.8 AI 教练 →
  *       9.9 学习陪跑对话框 → 10 交互 → 11 主循环
  * 铁律：动态采样率控制粒子总量保 60 帧、睡眠态零物理、
  *       音频引用一律相对路径 ./background.mp3
@@ -592,7 +671,7 @@ const PALETTE = [
 ];
 
 /* 应用状态机：LOADING = 等待 AI 建议；SUGGEST = 展示 AI 建议卡片 */
-const S = { IDLE: 0, FALLING: 1, FINISHED: 2, FAILING: 3, LOADING: 4, SUGGEST: 5 };
+const S = { IDLE: 0, FALLING: 1, FINISHED: 2, FAILING: 3, LOADING: 4, SUGGEST: 5, RESTING: 6 };
 /* 粒子状态机：云团 → 下落 →（漏斗内壁滑行）→ 穿透下落 → 翻滚碰撞 → 沙丘睡眠；
  * 特殊：FADE 切屏淡出回收、METEOR 失败流星、ORBIT 点击磁场 */
 const PS = { CORE: 0, FALL: 1, SLEEP: 2, FADE: 3, METEOR: 4, PLATE: 5, ORBIT: 6, TUMBLE: 7 };
@@ -630,9 +709,15 @@ const rScore   = document.getElementById('rScore');
 const rLine1   = document.getElementById('rLine1');
 const rLine2   = document.getElementById('rLine2');
 const againBtn = document.getElementById('againBtn');
+const restingEl      = document.getElementById('resting');        // 晨曦休息卡
+const restTime       = document.getElementById('restTime');       // 15 分钟倒计时
+const restBookTitle  = document.getElementById('restBookTitle');  // 动态推荐书名
+const restBookQuote  = document.getElementById('restBookQuote');  // 推荐语
+const restContinue   = document.getElementById('restContinue');   // 休息结束的继续按钮
 
 let W = 0, H = 0, DPR = 1;      // 逻辑宽/高与设备像素比
 let skyGrad = null;             // 夜空渐变（resize 时重建）
+let dawnGrad = null;            // 晨曦渐变（RESTING 专用，resize 时重建）
 let warnGrad = null;            // 停滞暖橙边缘光（resize 时重建）
 let nowSec = 0;                 // 主循环时间戳（供事件回调读取）
 
@@ -1186,6 +1271,8 @@ function resetToIdle(msg) {
   plateCount = 0; leakCooldown = 0;
   if (adviceAbort) { adviceAbort.abort(); adviceAbort = null; }   // 掐掉进行中的 AI 请求
   if (chatAbort) { chatAbort.abort(); chatAbort = null; }         // 掐掉进行中的聊天请求
+  if (restBookAbort) { restBookAbort.abort(); restBookAbort = null; }  // 掐掉进行中的书单请求
+  restingEl.classList.add('hidden');             // 收起 RESTING 晨曦休息卡
   hud.classList.add('hidden');
   reportEl.classList.add('hidden');
   warnEl.classList.add('hidden');
@@ -1330,6 +1417,90 @@ function renderDanmakus(bright, t) {
     ctx.fillText(d.zh, d.x, d.y + 8);
   }
   ctx.restore();
+}
+
+/* ================================================================
+ * 9.7 晨曦强制休息（RESTING · 15 分钟 · 动态学科关联书单）
+ * ---------------------------------------------------------------
+ * 流程：FINISHED 结算卡 --「进入 15 分钟休息」--> RESTING
+ *       整片夜空切换为晨曦浅蓝（dawnGrad）+ 柔和晨光，
+ *       卡片平滑显示 15 分钟倒计时；归零后出现「继续」按钮，
+ *       点击回到 IDLE，恢复深色星空，可开启下一轮粒子下落。
+ * 【动态书单】进入休息即按刚完成的任务名（currentTask）调 DeepSeek：
+ *   物理→科幻小说、历史→历史演义、英语→英文轻小说……
+ *   要求模型直接输出 JSON：{ title: 中英双语书名, quote: ≤30字治愈推荐语 }。
+ * 【防翻车机制】（比建议卡更严格，绝不允许空白）：
+ *   ① AbortController 3 秒硬超时；② HTTP 非 200 / 断网 / JSON 缺字段
+ *   一律视为失败；③ 任何失败静默降级为本地兜底书《银河系漫游指南》，
+ *   卡片永远有内容。离开 RESTING 时自动掐断进行中的请求。
+ * ================================================================ */
+const REST_MS = 15 * 60 * 1000;                  // 强制休息时长：15 分钟
+let restEndsAt = 0;                              // 休息结束时间戳（ms）
+let restBookAbort = null;                        // 进行中的书单请求（可取消）
+
+/* 本地兜底书：只在 API 失联时登场，保证卡片绝不空白 */
+const FALLBACK_BOOK = {
+  title: '《银河系漫游指南》 The Hitchhiker\'s Guide to the Galaxy',
+  quote: '别慌。宇宙那么大，这十五分钟什么都不用做。',
+};
+
+/* —— FINISHED → RESTING：进入晨曦休息 —— */
+function enterResting() {
+  state = S.RESTING;
+  restEndsAt = Date.now() + REST_MS;
+  sprintOn = false;                              // 冲刺余温退去，晨光不搞橙色脉冲
+  hud.classList.remove('sprint');
+  dim = 1; dimTarget = 1; colorRestore = 1;      // 休息期间满亮度满色彩
+  reportEl.classList.add('hidden');
+  hud.classList.add('hidden');
+  warnEl.classList.add('hidden');
+  restBookTitle.textContent = '正在为你挑一本书…'; // 请求期间的占位文案
+  restBookQuote.textContent = '';
+  restContinue.classList.add('hidden');
+  restTime.textContent = '15:00';
+  restingEl.classList.remove('hidden');
+  bgmTarget = 0.22;                              // 音乐再轻一点，陪晨光
+  document.title = 'FlowDrop · 晨曦休息中';
+  fetchRestBook();                               // 异步挑书，不阻塞入场
+}
+
+/* —— 动态学科关联书单：DeepSeek 推荐 + 3s 超时 + 本地兜底 —— */
+async function fetchRestBook() {
+  /* 若上一次请求还没了结，先掐掉，避免竞态写脏卡片 */
+  if (restBookAbort) restBookAbort.abort();
+  const ctrl = new AbortController();
+  restBookAbort = ctrl;
+  const timer = setTimeout(() => ctrl.abort(), 3000);   // ① 3 秒超时红线
+
+  let book = null;                               // null = 失败，走兜底
+  try {
+    const taskName = currentTask || refinedTask || '刚刚的学习';
+    const txt = await callAI([
+      { role: 'system', content: '用户刚刚完成了【' + taskName + '】的复习，现在进入了 15 分钟的强制休息时间。请为用户推荐 1 本与刚才复习学科有微弱关联、但内容绝对轻松有趣的小说或文学作品（例如：物理推科幻小说，历史推历史演义，英语推英文轻小说）。请直接以 JSON 格式输出，包含两个字段：title (中英双语书名)，quote (一句30字以内的中文推荐语，语气要治愈、放松)。' },
+      { role: 'user', content: '我刚复习完：' + taskName },
+    ], 150, ctrl.signal);
+    if (txt) {
+      /* 容错抠出 JSON：模型偶尔会给 JSON 包一层 ```json 围栏 */
+      const m = txt.match(/\{[\s\S]*\}/);
+      if (m) {
+        const obj = JSON.parse(m[0]);
+        if (obj && obj.title && obj.quote) {
+          book = { title: String(obj.title).slice(0, 80),
+                   quote: String(obj.quote).slice(0, 60) };
+        }
+      }
+    }
+  } catch (err) {
+    /* 超时 / 断网 / CORS / JSON 解析失败：全部静默降级，卡片绝不空白 */
+  } finally {
+    clearTimeout(timer);
+    if (restBookAbort === ctrl) restBookAbort = null;
+  }
+
+  if (state !== S.RESTING) return;               // 期间已离开休息态则安静放弃
+  const b = book || FALLBACK_BOOK;               // ③ 失败兜底
+  restBookTitle.textContent = b.title;
+  restBookQuote.textContent = b.quote;
 }
 
 /* ================================================================
@@ -1973,6 +2144,17 @@ function update(dt, t) {
     reportShown = true;
     showReport();
   }
+  /* RESTING：15 分钟强制休息倒计时（走真实时钟，切屏/冻结不偷时间） */
+  if (state === S.RESTING) {
+    const left = Math.max(0, restEndsAt - Date.now());
+    const mm = String(Math.floor(left / 60000)).padStart(2, '0');
+    const ss = String(Math.floor(left % 60000 / 1000)).padStart(2, '0');
+    restTime.textContent = mm + ':' + ss;
+    if (left <= 0 && restContinue.classList.contains('hidden')) {
+      restContinue.classList.remove('hidden');     // 时间到，放行「继续」按钮
+      playChime();                                 // 风铃轻响，温柔唤回
+    }
+  }
 }
 
 /* 倒置漏斗绘制：极宽上开口 + 收窄斜壁 + 极小漏孔 + 漏下光柱 */
@@ -2027,9 +2209,20 @@ function drawFunnel(bright) {
 function render(t) {
   const bright = dim * (0.35 + 0.65 * colorRestore);   // 全局亮度因子
 
-  /* ① 夜空渐变 */
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, W, H);
+  /* ① 夜空渐变（RESTING 时切换为晨曦浅蓝 + 右上柔暖晨光） */
+  if (state === S.RESTING && dawnGrad) {
+    ctx.fillStyle = dawnGrad;
+    ctx.fillRect(0, 0, W, H);
+    const mg = ctx.createRadialGradient(
+      W * 0.78, H * 0.18, 0, W * 0.78, H * 0.18, Math.max(W, H) * 0.55);
+    mg.addColorStop(0, 'rgba(255,236,190,0.55)');
+    mg.addColorStop(1, 'rgba(255,236,190,0)');
+    ctx.fillStyle = mg;
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    ctx.fillStyle = skyGrad;
+    ctx.fillRect(0, 0, W, H);
+  }
 
   /* ①·五 【冲刺模式】背景泛起橙色脉冲：从沙丘上方缓缓呼吸的暖光 */
   if (sprintOn) {
@@ -2042,10 +2235,11 @@ function render(t) {
     ctx.fillRect(0, 0, W, H);
   }
 
-  /* ② 缓慢闪烁的静态星辰 */
+  /* ② 缓慢闪烁的静态星辰（RESTING 晨曦下星星隐去） */
+  const starDim = state === S.RESTING ? 0.18 : 1;
   ctx.fillStyle = '#cdd8ff';
   for (const s of stars) {
-    ctx.globalAlpha = (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * s.s + s.p))) * bright;
+    ctx.globalAlpha = (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * s.s + s.p))) * bright * starDim;
     ctx.fillRect(s.x, s.y, s.r, s.r);
   }
   ctx.globalAlpha = 1;
@@ -2090,7 +2284,7 @@ function render(t) {
   for (const p of pool) {
     if (!p.used || p.alpha <= 0) continue;
     const sz = p.size * 6;
-    ctx.globalAlpha = Math.max(0, Math.min(1, p.alpha * bright));
+    ctx.globalAlpha = Math.max(0, Math.min(1, p.alpha * bright * (state === S.RESTING ? 0.4 : 1)));
     ctx.drawImage(sprSet[p.spr], p.x - sz / 2, p.y - sz / 2, sz, sz);
     if (p.state === PS.METEOR) {                 // 流星尾迹
       ctx.globalAlpha *= 0.5;
@@ -2167,6 +2361,11 @@ function onResize() {
   skyGrad.addColorStop(0, '#0f172a');                // 顶部深紫蓝
   skyGrad.addColorStop(1, '#1e1b4b');                // 底部深空蓝
 
+  dawnGrad = ctx.createLinearGradient(0, 0, 0, H);   // RESTING 晨曦：浅蓝 → 暖杏
+  dawnGrad.addColorStop(0, '#a8c8ec');
+  dawnGrad.addColorStop(0.55, '#cfe2f7');
+  dawnGrad.addColorStop(1, '#f6e3c5');
+
   warnGrad = ctx.createRadialGradient(
     W / 2, H / 2, Math.min(W, H) * 0.35,
     W / 2, H / 2, Math.max(W, H) * 0.75
@@ -2204,7 +2403,8 @@ if (window.visualViewport) {
 /* ---------------- 13. UI 事件绑定 ---------------- */
 startBtn.addEventListener('click', start);
 focusBtn.addEventListener('click', beginFocus);   // SUGGEST 卡片上的「开始专注」
-againBtn.addEventListener('click', () => resetToIdle());
+againBtn.addEventListener('click', enterResting);              // 结算卡 → 强制 15 分钟休息
+restContinue.addEventListener('click', () => resetToIdle('休息好啦，星星在等你'));
 
 /* ---- AI 陪跑对话框：展开 / 收起 / 发送（展开即原地冻结，收起即无缝恢复） ---- */
 chatFab.addEventListener('click', () => {                 // 点击星光钮：展开或收起对话框
